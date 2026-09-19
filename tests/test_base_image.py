@@ -92,6 +92,55 @@ def test_layer_ordering():
             assert builder.layers[1].digest == "sha256:base2"
             assert "sha256:base" not in builder.layers[2].digest
 
+def test_built_config_appends_diff_ids_for_new_layers():
+    """The final config must describe every manifest layer, including new app layers."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ctx = Path(tmpdir) / "context"
+        ctx.mkdir()
+        (ctx / "app.py").write_text("print('hello')")
+        (ctx / "pyproject.toml").write_text('[project]\nname="test"\nversion="0.1"')
+
+        output = Path(tmpdir) / "output"
+
+        with patch('pycontainer.builder.ImageBuilder._pull_base_image') as mock_pull:
+            from pycontainer.oci import OCILayer
+            mock_pull.return_value = (
+                [
+                    OCILayer("application/vnd.oci.image.layer.v1.tar+gzip", "sha256:base1", 1000, "/tmp/base1"),
+                    OCILayer("application/vnd.oci.image.layer.v1.tar+gzip", "sha256:base2", 2000, "/tmp/base2")
+                ],
+                {
+                    "architecture": "amd64",
+                    "os": "linux",
+                    "config": {"Env": [], "WorkingDir": "/"},
+                    "rootfs": {
+                        "type": "layers",
+                        "diff_ids": ["sha256:base-diff-1", "sha256:base-diff-2"]
+                    },
+                    "history": [{"created_by": "base layer 1"}, {"created_by": "base layer 2"}]
+                }
+            )
+
+            cfg = BuildConfig(
+                tag="test:v1",
+                base_image="python:3.11-slim",
+                context_dir=str(ctx),
+                output_dir=str(output),
+                use_cache=False
+            )
+            builder = ImageBuilder(cfg)
+            builder.build()
+
+            config_blob = output / "blobs" / "sha256" / builder.config_digest.split(":", 1)[1]
+            config = json.loads(config_blob.read_text())
+
+            assert config["rootfs"]["diff_ids"] == [
+                "sha256:base-diff-1",
+                "sha256:base-diff-2",
+                builder.layers[-1].digest,
+            ]
+            assert config["history"][-1]["created_by"] == "pycontainer add application files"
+
 def test_dependency_layer_creation():
     """Test separate dependency layer creation."""
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -135,6 +184,33 @@ def test_env_override():
     assert env_dict["DEBUG"] == "true"
     assert env_dict["LOG_LEVEL"] == "info"
     assert env_dict["NEW_VAR"] == "value"
+
+def test_build_without_base_config_initializes_rootfs():
+    """Standalone images still need a valid OCI rootfs section."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ctx = Path(tmpdir) / "context"
+        ctx.mkdir()
+        (ctx / "app.py").write_text("print('hello')")
+        (ctx / "pyproject.toml").write_text('[project]\nname="test"\nversion="0.1"')
+
+        output = Path(tmpdir) / "output"
+
+        with patch('pycontainer.builder.ImageBuilder._pull_base_image', return_value=([], None)):
+            cfg = BuildConfig(
+                tag="test:v1",
+                context_dir=str(ctx),
+                output_dir=str(output),
+                use_cache=False
+            )
+            builder = ImageBuilder(cfg)
+            builder.build()
+
+            config_blob = output / "blobs" / "sha256" / builder.config_digest.split(":", 1)[1]
+            config = json.loads(config_blob.read_text())
+
+            assert config["rootfs"]["type"] == "layers"
+            assert config["rootfs"]["diff_ids"] == [builder.layers[0].digest]
+            assert config["history"][-1]["created_by"] == "pycontainer add application files"
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

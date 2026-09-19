@@ -48,17 +48,30 @@ class ImageBuilder:
         include = self.config.include_paths or default_include_paths(self.config.context_dir)
 
         app_layers=[]
+        app_diff_ids=[]
+        app_history=[]
         if self.config.include_deps:
             deps_layer=self._create_deps_layer(layers_dir)
-            if deps_layer: app_layers.append(deps_layer)
+            if deps_layer:
+                app_layers.append(deps_layer)
+                app_diff_ids.append(deps_layer.digest)
+                app_history.append({"created_by":"pycontainer add dependency files"})
         
         app_layer=self._create_app_layer(layers_dir, include)
         app_layers.append(app_layer)
+        app_diff_ids.append(app_layer.digest)
+        app_history.append({"created_by":"pycontainer add application files"})
         
         all_layers=base_layers+app_layers
 
         cfg = build_config_json(arch,os_name,self.config.env,self.config.workdir,entry,self.config.exposed_ports,
-                                labels=self.config.labels,user=self.config.user,cmd=self.config.cmd,base_config=base_config)
+                                labels=self.config.labels,user=self.config.user,cmd=self.config.cmd,base_config=base_config,
+                                diff_ids=app_diff_ids,history=app_history)
+        diff_ids=cfg.get("rootfs",{}).get("diff_ids",[])
+        if len(diff_ids)!=len(all_layers):
+            raise RuntimeError(
+                f"Invalid OCI config: manifest has {len(all_layers)} layers but config has {len(diff_ids)} diff_ids"
+            )
         cfg_bytes=json.dumps(cfg,separators=(',',':')).encode()
         cfg_digest="sha256:"+hashlib.sha256(cfg_bytes).hexdigest()
         cfg_path=layers_dir/cfg_digest.split(":",1)[1]
