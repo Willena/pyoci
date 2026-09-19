@@ -332,6 +332,7 @@ cat > pycontainer.toml << EOF
 base_image = "python:3.11-slim"
 workdir = "/app"
 include_deps = true
+clean_output_dir = false
 
 [build.env]
 DEBUG = "true"
@@ -344,6 +345,9 @@ EOF
 
 # Build with the config
 pycontainer build --tag myapp:dev --config pycontainer.toml --verbose
+
+# Or force a fresh output layout for this run
+pycontainer build --tag myapp:dev --config pycontainer.toml --clean-output-dir --verbose
 
 # Verify the config was applied
 jq '.config' dist/image/blobs/sha256/<config-digest>

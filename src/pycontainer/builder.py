@@ -36,6 +36,11 @@ class ImageBuilder:
             self._show_build_plan()
             return self.config.tag
         
+        output_path=Path(self.config.output_dir)
+        if self.config.clean_output_dir and output_path.exists():
+            logger.info("Cleaning output directory %s", output_path)
+            shutil.rmtree(output_path)
+
         output=ensure_dir(self.config.output_dir)
         blobs=ensure_dir(output/'blobs')
         layers_dir=ensure_dir(blobs/'sha256')

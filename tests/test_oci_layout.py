@@ -1,16 +1,34 @@
 """Tests for OCI Image Layout structure validation."""
-import json, tempfile, shutil
+import json, tempfile
 from pathlib import Path
+from unittest.mock import patch
 from pycontainer.builder import ImageBuilder
 from pycontainer.config import BuildConfig
+
+
+def _mock_base_image():
+    return (
+        [],
+        {"architecture": "amd64", "os": "linux", "config": {"Env": [], "WorkingDir": "/"}}
+    )
+
+
+def _create_test_context(tmpdir: str) -> Path:
+    ctx=Path(tmpdir)/"context"
+    ctx.mkdir()
+    (ctx/"app.py").write_text("print('hello')")
+    (ctx/"pyproject.toml").write_text('[project]\nname="test"\nversion="0.1"')
+    return ctx
 
 def test_oci_layout_structure():
     """Verify complete OCI layout structure is created."""
     with tempfile.TemporaryDirectory() as tmpdir:
+        ctx=_create_test_context(tmpdir)
         output=Path(tmpdir)/"test-image"
-        cfg=BuildConfig(tag="test:v1",output_dir=str(output),context_dir=".")
-        builder=ImageBuilder(cfg)
-        builder.build()
+        cfg=BuildConfig(tag="test:v1",output_dir=str(output),context_dir=str(ctx),use_cache=False)
+        with patch("pycontainer.builder.ImageBuilder._pull_base_image", return_value=_mock_base_image()):
+            builder=ImageBuilder(cfg)
+            builder.build()
         
         assert (output/"oci-layout").exists(),"oci-layout file missing"
         assert (output/"index.json").exists(),"index.json missing"
@@ -43,17 +61,70 @@ def test_oci_layout_structure():
 def test_tag_extraction():
     """Verify tag name is correctly extracted for refs."""
     with tempfile.TemporaryDirectory() as tmpdir:
+        ctx=_create_test_context(tmpdir)
         output=Path(tmpdir)/"test-image"
-        cfg=BuildConfig(tag="myapp:v2.1.0",output_dir=str(output),context_dir=".")
-        builder=ImageBuilder(cfg)
-        builder.build()
+        cfg=BuildConfig(tag="myapp:v2.1.0",output_dir=str(output),context_dir=str(ctx),use_cache=False)
+        with patch("pycontainer.builder.ImageBuilder._pull_base_image", return_value=_mock_base_image()):
+            builder=ImageBuilder(cfg)
+            builder.build()
         
         assert (output/"refs"/"tags"/"v2.1.0").exists(),"Tag file not created with correct name"
         
-        cfg2=BuildConfig(tag="latest",output_dir=str(output)+"2",context_dir=".")
-        builder2=ImageBuilder(cfg2)
-        builder2.build()
+        cfg2=BuildConfig(tag="latest",output_dir=str(output)+"2",context_dir=str(ctx),use_cache=False)
+        with patch("pycontainer.builder.ImageBuilder._pull_base_image", return_value=_mock_base_image()):
+            builder2=ImageBuilder(cfg2)
+            builder2.build()
         assert (Path(output).parent/"test-image2"/"refs"/"tags"/"latest").exists()
+
+
+def test_output_dir_is_preserved_by_default():
+    """Verify existing output files are preserved unless cleanup is enabled."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ctx=_create_test_context(tmpdir)
+
+        output=Path(tmpdir)/"test-image"
+        output.mkdir()
+        stale_file=output/"stale.txt"
+        stale_file.write_text("keep me")
+
+        cfg=BuildConfig(
+            tag="test:v1",
+            output_dir=str(output),
+            context_dir=str(ctx),
+            use_cache=False,
+        )
+
+        with patch("pycontainer.builder.ImageBuilder._pull_base_image", return_value=_mock_base_image()):
+            builder=ImageBuilder(cfg)
+            builder.build()
+
+        assert stale_file.exists(), "Existing files should not be deleted by default"
+
+
+def test_output_dir_can_be_cleaned_before_build():
+    """Verify existing output files are removed when cleanup is enabled."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ctx=_create_test_context(tmpdir)
+
+        output=Path(tmpdir)/"test-image"
+        output.mkdir()
+        stale_file=output/"stale.txt"
+        stale_file.write_text("remove me")
+
+        cfg=BuildConfig(
+            tag="test:v1",
+            output_dir=str(output),
+            context_dir=str(ctx),
+            clean_output_dir=True,
+            use_cache=False,
+        )
+
+        with patch("pycontainer.builder.ImageBuilder._pull_base_image", return_value=_mock_base_image()):
+            builder=ImageBuilder(cfg)
+            builder.build()
+
+        assert not stale_file.exists(), "Cleanup should delete stale files from the output directory"
+        assert (output/"index.json").exists(), "Build output should still be recreated after cleanup"
 
 if __name__=="__main__":
     test_oci_layout_structure()

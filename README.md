@@ -70,6 +70,9 @@ pycontainer build --tag myapp:latest --platform linux/amd64
 
 # Dry-run to preview (verbose mode)
 pycontainer build --tag test:latest --dry-run --verbose
+
+# Remove old output before rebuilding into the same directory
+pycontainer build --tag test:latest --clean-output-dir
 ```
 
 ### Output
@@ -331,6 +334,7 @@ pycontainer build \
 - `--platform PLATFORM` — Target platform (e.g., `linux/arm64`)
 - `--verbose` / `-v` — Detailed build progress
 - `--dry-run` — Preview build without creating artifacts
+- `--clean-output-dir` / `--no-clean-output-dir` — Control whether the output directory is deleted before building
 - `--no-reproducible` — Disable deterministic builds
 
 The cache automatically:
@@ -371,6 +375,7 @@ base_image = "python:3.11-slim"
 workdir = "/app"
 include_deps = true
 reproducible = true
+clean_output_dir = false
 
 [build.labels]
 maintainer = "team@example.com"

@@ -12,6 +12,7 @@ class BuildConfig:
     exposed_ports: List[int] = field(default_factory=list)
     include_paths: Optional[List[str]] = None
     output_dir: str = "dist/image"
+    clean_output_dir: bool = False
     use_cache: bool = True
     cache_dir: Optional[str] = None
     max_cache_size_mb: int = 5000

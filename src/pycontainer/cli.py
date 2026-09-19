@@ -9,6 +9,7 @@ def main():
     parser=argparse.ArgumentParser()
     sub=parser.add_subparsers(dest="cmd",required=True)
     b=sub.add_parser("build")
+    clean_output_group=b.add_mutually_exclusive_group()
     b.add_argument("--config","-c",help="Path to pycontainer.toml config file")
     b.add_argument("--tag")
     b.add_argument("--base-image",help="Base image to layer on (auto-detected from requires-python if not specified)")
@@ -27,6 +28,8 @@ def main():
     b.add_argument("--platform",default="linux/amd64",help="Target platform (e.g., linux/amd64, linux/arm64)")
     b.add_argument("--no-reproducible",action="store_true",help="Disable reproducible builds")
     b.add_argument("--sbom",action="store_true",help="Generate SBOM (Software Bill of Materials)")
+    clean_output_group.add_argument("--clean-output-dir",dest="clean_output_dir",action="store_true",default=None,help="Delete the output directory before building")
+    clean_output_group.add_argument("--no-clean-output-dir",dest="clean_output_dir",action="store_false",help="Preserve existing files in the output directory before building")
     args=parser.parse_args()
 
     if args.verbose:
@@ -47,7 +50,8 @@ def main():
             'dry_run': args.dry_run,
             'platform': args.platform,
             'reproducible': not args.no_reproducible if args.no_reproducible else None,
-            'generate_sbom': args.sbom
+            'generate_sbom': args.sbom,
+            'clean_output_dir': args.clean_output_dir
         }
         cli_overrides={k:v for k,v in cli_overrides.items() if v is not None}
         cfg=config_from_file(Path(args.config), cli_overrides)
@@ -68,7 +72,8 @@ def main():
             verbose=args.verbose,
             dry_run=args.dry_run,
             platform=args.platform,
-            reproducible=not args.no_reproducible
+            reproducible=not args.no_reproducible,
+            clean_output_dir=bool(args.clean_output_dir)
         )
         cfg.generate_sbom=args.sbom
     builder=ImageBuilder(cfg)

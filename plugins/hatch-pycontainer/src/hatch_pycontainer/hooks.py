@@ -57,6 +57,7 @@ class ContainerBuildHook:
         env = self.config.get("env", {})
         labels = self.config.get("labels", {})
         use_cache = not self.config["no-cache"] if "no-cache" in self.config else True
+        clean_output_dir = self.config.get("clean-output-dir", False)
 
         # Add build metadata to labels
         labels["org.opencontainers.image.version"] = version
@@ -76,6 +77,7 @@ class ContainerBuildHook:
             labels=labels,
             verbose=verbose,
             use_cache=use_cache,
+            clean_output_dir=clean_output_dir,
         )
 
         if sbom:

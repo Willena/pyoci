@@ -131,11 +131,13 @@ def test_config_merge():
     file_cfg={
         "tag": "myapp:v1",
         "base_image": "python:3.11",
-        "env": {"DEBUG": "false"}
+        "env": {"DEBUG": "false"},
+        "clean_output_dir": False,
     }
     cli_cfg={
         "tag": "myapp:v2",
-        "env": {"DEBUG": "true", "NEW_VAR": "value"}
+        "env": {"DEBUG": "true", "NEW_VAR": "value"},
+        "clean_output_dir": True,
     }
     
     merged=merge_configs(file_cfg, cli_cfg)
@@ -144,6 +146,7 @@ def test_config_merge():
     assert merged["base_image"]=="python:3.11"
     assert merged["env"]["DEBUG"]=="true"
     assert merged["env"]["NEW_VAR"]=="value"
+    assert merged["clean_output_dir"]==True
 
 def test_dry_run_mode():
     """Test dry-run mode doesn't create files."""

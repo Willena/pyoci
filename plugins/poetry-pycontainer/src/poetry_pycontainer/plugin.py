@@ -74,6 +74,7 @@ class ContainerBuildCommand(Command):
             no_cache = self.option("no-cache")
         else:
             no_cache = tool_config.get("no_cache", False)
+        clean_output_dir = tool_config.get("clean_output_dir", False)
         
         # Get environment variables from config
         env = tool_config.get("env", {})
@@ -112,6 +113,7 @@ class ContainerBuildCommand(Command):
             verbose=verbose,
             dry_run=dry_run,
             use_cache=not no_cache,
+            clean_output_dir=clean_output_dir,
         )
         
         # Generate SBOM if requested
