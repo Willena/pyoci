@@ -18,7 +18,8 @@ class RegistryClient:
         self.username=username
         self.password=password
         self.base_url=f"https://{self.registry}/v2"
-        self._bearer_token=None
+        self._bearer_tokens={}
+        self._last_bearer_token=None
     
     def _parse_www_authenticate(self, header: str) -> Optional[Dict[str, str]]:
         """Parse Www-Authenticate header for OAuth2 challenge."""
@@ -37,11 +38,12 @@ class RegistryClient:
         
         if not realm: return None
         
-        params=[]
-        if service: params.append(f'service={service}')
-        if scope: params.append(f'scope={scope}')
+        params={}
+        if service: params['service']=service
+        if scope: params['scope']=scope
         
-        url=f"{realm}?{'&'.join(params)}"
+        query=urllib.parse.urlencode(params)
+        url=f"{realm}?{query}" if query else realm
         headers={}
         
         if self.username and self.password:
@@ -57,10 +59,26 @@ class RegistryClient:
                 return data.get('token') or data.get('access_token')
         except: return None
     
-    def _make_request(self, method: str, url: str, data: Optional[bytes]=None, headers: Optional[Dict]=None, retry_auth: bool=True) -> Tuple[int, bytes, Dict]:
-        h=headers or {}
+    def _auth_cache_key(self, auth_params: Dict[str, str]) -> Tuple[str, str, str]:
+        return (
+            auth_params.get('realm', ''),
+            auth_params.get('service', ''),
+            auth_params.get('scope', ''),
+        )
+
+    def _get_cached_bearer_token(self, auth_params: Optional[Dict[str, str]]=None) -> Optional[str]:
+        if auth_params:
+            return self._bearer_tokens.get(self._auth_cache_key(auth_params))
+        return self._last_bearer_token
+
+    def _store_bearer_token(self, auth_params: Dict[str, str], token: str) -> None:
+        self._bearer_tokens[self._auth_cache_key(auth_params)]=token
+        self._last_bearer_token=token
+
+    def _make_request(self, method: str, url: str, data: Optional[bytes]=None, headers: Optional[Dict]=None, retry_auth: bool=True, auth_params: Optional[Dict[str, str]]=None) -> Tuple[int, bytes, Dict]:
+        h=dict(headers or {})
         
-        token=self._bearer_token or self.auth_token
+        token=self._get_cached_bearer_token(auth_params) or self.auth_token
         if token:
             h['Authorization']=f'Bearer {token}'
         elif self.username and self.password:
@@ -72,14 +90,18 @@ class RegistryClient:
             with urllib.request.urlopen(req) as resp:
                 return resp.status, resp.read(), dict(resp.headers)
         except urllib.error.HTTPError as e:
-            if e.code==401 and retry_auth and not self._bearer_token:
+            if e.code==401 and retry_auth:
                 www_auth=e.headers.get('Www-Authenticate')
                 if www_auth:
-                    auth_params=self._parse_www_authenticate(www_auth)
-                    if auth_params:
-                        self._bearer_token=self._get_bearer_token(auth_params)
-                        if self._bearer_token:
-                            return self._make_request(method, url, data, headers, retry_auth=False)
+                    challenge=self._parse_www_authenticate(www_auth)
+                    if challenge:
+                        token=self._get_cached_bearer_token(challenge)
+                        if not token:
+                            token=self._get_bearer_token(challenge)
+                            if token:
+                                self._store_bearer_token(challenge, token)
+                        if token:
+                            return self._make_request(method, url, data, headers, retry_auth=False, auth_params=challenge)
             body=b''
             try:
                 body=e.read()
@@ -166,7 +188,7 @@ class RegistryClient:
         url=f"{self.base_url}/{self.repository}/blobs/{digest}"
         
         req=urllib.request.Request(url)
-        token=self._bearer_token or self.auth_token
+        token=self._last_bearer_token or self.auth_token
         if token:
             req.add_header('Authorization', f'Bearer {token}')
         elif self.username and self.password:
