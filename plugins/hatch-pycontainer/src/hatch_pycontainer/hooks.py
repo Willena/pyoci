@@ -2,24 +2,16 @@
 
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
+
+from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 from hatchling.plugin import hookimpl
 
 
-class ContainerBuildHook:
+class ContainerBuildHook(BuildHookInterface):
     """Build hook for creating container images with pycontainer-build."""
 
     PLUGIN_NAME = "pycontainer"
-
-    def __init__(self, root: str, config: Dict[str, Any]):
-        """Initialize the build hook.
-        
-        Args:
-            root: Project root directory
-            config: Hook configuration from pyproject.toml
-        """
-        self.root = Path(root)
-        self.config = config
 
     @staticmethod
     def _configure_logging(verbose: bool) -> None:
@@ -32,7 +24,11 @@ class ContainerBuildHook:
                 format='%(levelname)s: %(message)s' if verbose else '%(message)s',
             )
 
-    def initialize(self, version: str, build_data: Dict[str, Any]) -> None:
+    def dependencies(self) -> list[str]:
+        """Install pycontainer-build into the build environment before running."""
+        return ["pycontainer-build"]
+
+    def initialize(self, version: str, build_data: dict[str, Any]) -> None:
         """Initialize the build process."""
         if self.config.get("skip", False):
             return
@@ -46,12 +42,14 @@ class ContainerBuildHook:
                 "Install it with: pip install pycontainer-build"
             )
 
+        root = Path(self.root)
+
         # Get configuration
         tag = self.config.get("tag")
         if not tag:
             # Read from pyproject.toml
             import tomllib
-            pyproject_path = self.root / "pyproject.toml"
+            pyproject_path = root / "pyproject.toml"
             if pyproject_path.exists():
                 with open(pyproject_path, "rb") as f:
                     pyproject = tomllib.load(f)
@@ -66,8 +64,8 @@ class ContainerBuildHook:
         include_deps = self.config["include-deps"] if "include-deps" in self.config else True
         sbom = self.config.get("sbom")
         verbose = self.config["verbose"] if "verbose" in self.config else False
-        env = self.config.get("env", {})
-        labels = self.config.get("labels", {})
+        env = dict(self.config.get("env", {}))
+        labels = dict(self.config.get("labels", {}))
         use_cache = not self.config["no-cache"] if "no-cache" in self.config else True
         clean_output_dir = self.config.get("clean-output-dir", False)
 
@@ -77,9 +75,9 @@ class ContainerBuildHook:
         labels["org.opencontainers.image.version"] = version
 
         # Create build configuration
-        config = BuildConfig(
+        build_config = BuildConfig(
             tag=tag,
-            context_dir=str(self.root),
+            context_dir=str(root),
             base_image=base_image,
             include_deps=include_deps,
             env=env,
@@ -90,11 +88,11 @@ class ContainerBuildHook:
         )
 
         if sbom:
-            config.generate_sbom = sbom
+            build_config.generate_sbom = sbom
 
         # Build the image
         try:
-            builder = ImageBuilder(config)
+            builder = ImageBuilder(build_config)
             builder.build()
 
             # Push if requested

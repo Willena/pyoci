@@ -21,6 +21,7 @@ classifiers = [
 
 dependencies = [
     "hatchling>=1.18.0",
+    "pycontainer-build"
 ]
 
 [project.optional-dependencies]

@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
     "poetry>=1.2.0",
     "cleo>=2.0.0",
+    "pycontainer-build",
 ]
 
 [project.optional-dependencies]

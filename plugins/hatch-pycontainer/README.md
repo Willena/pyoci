@@ -29,7 +29,7 @@ requires = ["hatchling", "hatch-pycontainer"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.hooks.pycontainer]
-enable = true
+# The hook runs when this section is present.
 ```
 
 Then build your container:
@@ -63,9 +63,6 @@ include-deps = true
 
 ```toml
 [tool.hatch.build.hooks.pycontainer]
-# Enable/disable the hook
-enable = true
-
 # Skip container build (useful for local dev)
 skip = false
 
