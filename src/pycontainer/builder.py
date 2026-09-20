@@ -14,7 +14,7 @@ from .project import detect_entrypoint, default_include_paths, find_dependencies
 from .framework import apply_framework_defaults
 from .fs_utils import ensure_dir, iter_files
 from .registry_client import RegistryClient, parse_image_reference
-from .auth import get_auth_for_registry
+from .auth import RegistryAuth, get_auth_for_registry
 from .cache import LayerCache
 from .sbom import generate_sbom
 
@@ -112,8 +112,8 @@ class ImageBuilder:
     def _pull_base_image(self, layers_dir: Path, os_name: str, arch: str) -> Tuple[List[OCILayer], Optional[Dict]]:
         """Pull base image from registry, return (base_layers, base_config)."""
         registry, repo, tag=parse_image_reference(self.config.base_image)
-        auth_token=get_auth_for_registry(registry)
-        client=RegistryClient(registry, repo, auth_token=auth_token)
+        auth=get_auth_for_registry(registry)
+        client=RegistryClient(registry, repo, auth=auth)
         
         print(f"Pulling base image {self.config.base_image} for {os_name}/{arch}...")
         manifest, _=client.pull_manifest(tag)
@@ -145,18 +145,16 @@ class ImageBuilder:
         print(f"✓ Base image pulled ({len(base_layers)} layers)")
         return base_layers, base_config
     
-    def push(self, registry_url: Optional[str]=None, auth_token: Optional[str]=None, username: Optional[str]=None, password: Optional[str]=None, show_progress: bool=True):
+    def push(self, registry_url: Optional[str]=None, auth: Optional[RegistryAuth]=None, show_progress: bool=True):
         """Push built image to registry."""
         if not hasattr(self, 'manifest_digest'):
             raise RuntimeError("Must call build() before push()")
         
         target=registry_url or self.config.tag
         registry, repo, tag=parse_image_reference(target)
-        
-        if not auth_token and not password:
-            auth_token=get_auth_for_registry(registry, username, password)
-        
-        client=RegistryClient(registry, repo, auth_token=auth_token, username=username, password=password)
+
+        auth=auth or get_auth_for_registry(registry)
+        client=RegistryClient(registry, repo, auth=auth)
         output=Path(self.config.output_dir)
         layers_dir=output/'blobs'/'sha256'
         

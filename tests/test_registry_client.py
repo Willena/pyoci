@@ -4,6 +4,7 @@ import json
 import urllib.error
 from unittest.mock import patch
 from pycontainer.registry_client import parse_image_reference, RegistryClient
+from pycontainer.auth import RegistryAuth
 
 def test_parse_image_reference():
     """Test parsing various image reference formats."""
@@ -21,10 +22,16 @@ def test_registry_client_construction():
     assert client.registry=="ghcr.io"
     assert client.repository=="user/repo"
     assert client.base_url=="https://ghcr.io/v2"
-    assert client.auth_token is None
+    assert client.auth is None
     
-    client_auth=RegistryClient("localhost:5000","test","token123")
-    assert client_auth.auth_token=="token123"
+    client_auth=RegistryClient("localhost:5000","test",auth=RegistryAuth.bearer("token123"))
+    assert client_auth.auth==RegistryAuth.bearer("token123")
+
+    client_basic=RegistryClient("ghcr.io","user/repo",auth=RegistryAuth.basic("alice","secret"))
+    assert client_basic.auth==RegistryAuth.basic("alice","secret")
+
+    client_bearer=RegistryClient("ghcr.io","user/repo",auth=RegistryAuth.bearer("token456"))
+    assert client_bearer.auth==RegistryAuth.bearer("token456")
     
     # Test docker.io translation to registry-1.docker.io
     client_dockerhub=RegistryClient("docker.io","library/python")
@@ -65,7 +72,7 @@ def make_http_error(req, status, headers=None, body=b""):
 def test_push_blob_refreshes_bearer_token_after_pull_scoped_exists_check(tmp_path):
     blob_path=tmp_path/"layer.tar"
     blob_path.write_bytes(b"layer-data")
-    client=RegistryClient("ghcr.io","user/app",username="user",password="pass")
+    client=RegistryClient("ghcr.io","user/app",auth=RegistryAuth.basic("user","pass"))
     requests=[]
     
     def fake_urlopen(req):
@@ -110,6 +117,22 @@ def test_push_blob_refreshes_bearer_token_after_pull_scoped_exists_check(tmp_pat
     assert client._bearer_tokens[("https://auth.example/token","ghcr.io","repository:user/app:pull,push")]=="push-token"
     assert ("POST","https://ghcr.io/v2/user/app/blobs/uploads/","Bearer pull-token") in requests
     assert ("POST","https://ghcr.io/v2/user/app/blobs/uploads/","Bearer push-token") in requests
+
+def test_basic_auth_from_typed_auth_is_sent_on_first_request():
+    requests=[]
+    client=RegistryClient("registry.example.com","team/app",auth=RegistryAuth.basic("user","pass"))
+
+    def fake_urlopen(req):
+        requests.append((req.get_method(), req.full_url, req.get_header("Authorization")))
+        return MockHTTPResponse(200)
+
+    with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        exists=client.blob_exists("sha256:abc123")
+
+    assert exists is True
+    assert requests==[
+        ("HEAD", "https://registry.example.com/v2/team/app/blobs/sha256:abc123", "Basic dXNlcjpwYXNz")
+    ]
 
 if __name__=="__main__":
     test_parse_image_reference()

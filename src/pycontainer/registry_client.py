@@ -2,6 +2,7 @@
 import urllib.request, urllib.parse, urllib.error, http.client, json, re, base64
 from pathlib import Path
 from typing import Optional, Dict, Tuple
+from .auth import RegistryAuth
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     """HTTP handler that doesn't follow redirects."""
@@ -9,14 +10,17 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 class RegistryClient:
-    def __init__(self, registry: str, repository: str, auth_token: Optional[str]=None, username: Optional[str]=None, password: Optional[str]=None):
+    def __init__(
+        self,
+        registry: str,
+        repository: str,
+        auth: Optional[RegistryAuth]=None
+    ):
         self.registry=registry.rstrip('/')
         if self.registry=='docker.io':
             self.registry='registry-1.docker.io'
         self.repository=repository
-        self.auth_token=auth_token
-        self.username=username
-        self.password=password
+        self.auth = auth
         self.base_url=f"https://{self.registry}/v2"
         self._bearer_tokens={}
         self._last_bearer_token=None
@@ -45,12 +49,13 @@ class RegistryClient:
         query=urllib.parse.urlencode(params)
         url=f"{realm}?{query}" if query else realm
         headers={}
-        
-        if self.username and self.password:
-            creds=base64.b64encode(f'{self.username}:{self.password}'.encode()).decode()
-            headers['Authorization']=f'Basic {creds}'
-        elif self.password:
-            headers['Authorization']=f'Bearer {self.password}'
+
+        if self.auth:
+            if self.auth.kind == 'basic':
+                creds=base64.b64encode(f'{self.auth.username}:{self.auth.password}'.encode()).decode()
+                headers['Authorization']=f'Basic {creds}'
+            elif self.auth.kind == 'bearer':
+                headers['Authorization']=f'Bearer {self.auth.token}'
         
         try:
             req=urllib.request.Request(url, headers=headers)
@@ -77,12 +82,12 @@ class RegistryClient:
 
     def _make_request(self, method: str, url: str, data: Optional[bytes]=None, headers: Optional[Dict]=None, retry_auth: bool=True, auth_params: Optional[Dict[str, str]]=None) -> Tuple[int, bytes, Dict]:
         h=dict(headers or {})
-        
-        token=self._get_cached_bearer_token(auth_params) or self.auth_token
+
+        token=self._get_cached_bearer_token(auth_params) or (self.auth and self.auth.token)
         if token:
             h['Authorization']=f'Bearer {token}'
-        elif self.username and self.password:
-            creds=base64.b64encode(f'{self.username}:{self.password}'.encode()).decode()
+        elif self.auth:
+            creds=base64.b64encode(f'{self.auth.username}:{self.auth.password}'.encode()).decode()
             h['Authorization']=f'Basic {creds}'
         
         req=urllib.request.Request(url, data=data, headers=h, method=method)
@@ -188,11 +193,11 @@ class RegistryClient:
         url=f"{self.base_url}/{self.repository}/blobs/{digest}"
         
         req=urllib.request.Request(url)
-        token=self._last_bearer_token or self.auth_token
+        token=self._last_bearer_token or (self.auth and self.auth.token)
         if token:
             req.add_header('Authorization', f'Bearer {token}')
-        elif self.username and self.password:
-            creds=base64.b64encode(f'{self.username}:{self.password}'.encode()).decode()
+        elif self.auth:
+            creds=base64.b64encode(f'{self.auth.username}:{self.auth.password}'.encode()).decode()
             req.add_header('Authorization', f'Basic {creds}')
         
         opener=urllib.request.build_opener(NoRedirect)
