@@ -1,9 +1,9 @@
-# Example FastAPI application for demonstrating pycontainer-build integrations
+# Example FastAPI application for demonstrating pyoci integrations
 
 [project]
 name = "fastapi-demo"
 version = "1.0.0"
-description = "Demo FastAPI app for pycontainer-build"
+description = "Demo FastAPI app for pyoci"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.104.0",
@@ -18,29 +18,29 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 # Note: Both Poetry and Hatch configurations are included to demonstrate
-# that pycontainer-build can be used with either tool. In a real project,
+# that pyoci can be used with either tool. In a real project,
 # you would typically only include the section for the tool you're using.
 
 # Poetry plugin configuration
-[tool.pycontainer]
+[tool.pyoci]
 tag = "fastapi-demo:latest"
 base_image = "python:3.11-slim"
 include_deps = true
 
-[tool.pycontainer.env]
+[tool.pyoci.env]
 ENV = "production"
 LOG_LEVEL = "info"
 
-[tool.pycontainer.labels]
+[tool.pyoci.labels]
 maintainer = "demo@example.com"
 description = "FastAPI demo application"
 
 # Hatch plugin configuration
-[tool.hatch.build.hooks.pycontainer]
+[tool.hatch.build.hooks.pyoci]
 tag = "fastapi-demo:latest"
 base-image = "python:3.11-slim"
 include-deps = true
 
-[tool.hatch.build.hooks.pycontainer.env]
+[tool.hatch.build.hooks.pyoci.env]
 ENV = "production"
 LOG_LEVEL = "info"

@@ -3,14 +3,14 @@
 
 set -e
 
-echo "🐍 pycontainer-build Cross-Platform Demo"
+echo "🐍 pyoci Cross-Platform Demo"
 echo "=========================================="
 echo ""
 
-# Check if pycontainer is installed
-if ! command -v pycontainer &> /dev/null; then
-    echo "❌ pycontainer not found. Please install it first:"
-    echo "   pip install -e /path/to/pycontainer-build"
+# Check if pyoci is installed
+if ! command -v pyoci &> /dev/null; then
+    echo "❌ pyoci not found. Please install it first:"
+    echo "   pip install -e /path/to/pyoci"
     exit 1
 fi
 
@@ -62,7 +62,7 @@ echo ""
 
 # Build for AMD64
 echo "🏗️  Building for linux/amd64..."
-pycontainer build \
+pyoci build \
   --tag cross-platform-demo:amd64 \
   --platform linux/amd64 \
   --base-image python:3.11-slim
@@ -81,7 +81,7 @@ echo ""
 # Build for ARM64
 echo "🏗️  Building for linux/arm64..."
 rm -rf dist/  # Clean for next build
-pycontainer build \
+pyoci build \
   --tag cross-platform-demo:arm64 \
   --platform linux/arm64 \
   --base-image python:3.11-slim
@@ -106,6 +106,6 @@ echo ""
 echo "💡 Next steps:"
 echo "  1. Load into Docker: docker load -i <(tar -C dist/image -cf - .)"
 echo "  2. Run the image: docker run cross-platform-demo:arm64"
-echo "  3. Push to registry: pycontainer build --tag <registry>/<image> --platform linux/amd64 --push"
+echo "  3. Push to registry: pyoci build --tag <registry>/<image> --platform linux/amd64 --push"
 echo ""
-echo "🔗 More info: https://github.com/spboyer/pycontainer-build/tree/main/examples/cross-platform"
+echo "🔗 More info: https://github.com/willena/pyoci/tree/main/examples/cross-platform"

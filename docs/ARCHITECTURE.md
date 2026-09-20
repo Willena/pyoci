@@ -1,8 +1,8 @@
-# Architecture: pycontainer-build
+# Architecture: pyoci
 
 ## Overview
 
-This document describes the architecture of pycontainer-build, a native Python container image builder that creates OCI-compliant images without requiring Docker or Dockerfiles.
+This document describes the architecture of pyoci, a native Python container image builder that creates OCI-compliant images without requiring Docker or Dockerfiles.
 
 ---
 
@@ -85,7 +85,7 @@ This document describes the architecture of pycontainer-build, a native Python c
 **Key Functions**:
 ```python
 def main():
-    """Entry point for pycontainer CLI."""
+    """Entry point for pyoci CLI."""
     parser = create_argument_parser()
     args = parser.parse_args()
     
@@ -367,7 +367,7 @@ def build_config_json(architecture: str, os_name: str,
             "diff_ids": [f"sha256:{digest}" for digest in layer_digests]
         },
         history=[
-            {"created_by": "pycontainer-build"}
+            {"created_by": "pyoci"}
         ]
     )
 ```
@@ -537,7 +537,7 @@ class BuildConfig:
     
     @classmethod
     def from_toml(cls, toml_path: Path) -> "BuildConfig":
-        """Load config from pycontainer.toml file."""
+        """Load config from pyoci.toml file."""
         import tomllib
         with toml_path.open("rb") as f:
             data = tomllib.load(f)
@@ -551,7 +551,7 @@ class BuildConfig:
 ```python
 class BlobCache:
     def __init__(self, cache_dir: Path = None):
-        self.cache_dir = cache_dir or Path.home() / ".pycontainer/cache"
+        self.cache_dir = cache_dir or Path.home() / ".pyoci/cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
     
     def get(self, digest: str) -> Path | None:
@@ -579,7 +579,7 @@ class BlobCache:
 ### Build Flow (Phase 0 - Current)
 
 ```
-1. User runs: pycontainer build --tag myapp:latest
+1. User runs: pyoci build --tag myapp:latest
 
 2. CLI parses args → BuildConfig(tag="myapp:latest", context_path=".")
 
@@ -602,7 +602,7 @@ class BlobCache:
 ### Push Flow (Phase 1 - Planned)
 
 ```
-1. User runs: pycontainer build --tag myapp:latest --push
+1. User runs: pyoci build --tag myapp:latest --push
 
 2. ImageBuilder.build() → dist/image/
 
@@ -859,7 +859,7 @@ config = BuildConfig(tag="app:v1", context_path="/path")
 
 ## Comparison to .NET SDK
 
-| Feature | .NET SDK | pycontainer-build | Status |
+| Feature | .NET SDK | pyoci | Status |
 |---------|----------|-------------------|--------|
 | No Dockerfile | ✅ | ✅ | Complete |
 | No Docker daemon | ✅ | ✅ | Complete |
@@ -882,4 +882,4 @@ config = BuildConfig(tag="app:v1", context_path="/path")
 
 **Last Updated**: 2025-11-19  
 **Document Version**: 1.0  
-**Maintainers**: pycontainer-build team
+**Maintainers**: pyoci team

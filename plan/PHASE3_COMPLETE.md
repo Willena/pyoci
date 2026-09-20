@@ -5,64 +5,64 @@
 
 ## Overview
 
-Phase 3 focused on enabling seamless integration with Python tooling, Azure Developer CLI, and CI/CD systems. This phase makes pycontainer-build accessible and usable through various developer workflows and tools.
+Phase 3 focused on enabling seamless integration with Python tooling, Azure Developer CLI, and CI/CD systems. This phase makes pyoci accessible and usable through various developer workflows and tools.
 
 ## Delivered Milestones
 
 ### ✅ 3.1: Poetry Plugin
 
 **Status**: Complete  
-**Location**: `plugins/poetry-pycontainer/`
+**Location**: `plugins/poetry-oci/`
 
-Created a fully functional Poetry plugin that integrates pycontainer-build into Poetry's workflow.
+Created a fully functional Poetry plugin that integrates pyoci into Poetry's workflow.
 
 **Features Implemented**:
 - Custom command: `poetry build-container`
-- Configuration via `[tool.pycontainer]` in pyproject.toml
+- Configuration via `[tool.pyoci]` in pyproject.toml
 - Automatic Poetry dependency packaging
 - Poetry metadata integration (name, version, authors → OCI labels)
-- Support for all pycontainer-build features (base images, SBOM, push, etc.)
+- Support for all pyoci features (base images, SBOM, push, etc.)
 - CLI flags for runtime configuration override
 
 **Usage**:
 ```bash
-poetry self add poetry-pycontainer
+poetry self add poetry-oci
 poetry build-container --tag myapp:latest --push
 ```
 
 **Configuration Example**:
 ```toml
-[tool.pycontainer]
+[tool.pyoci]
 tag = "myapp:latest"
 base_image = "python:3.11-slim"
 registry = "ghcr.io/user/myapp"
 include_deps = true
 push = false
 
-[tool.pycontainer.env]
+[tool.pyoci.env]
 ENV = "production"
 PORT = "8080"
 
-[tool.pycontainer.labels]
+[tool.pyoci.labels]
 maintainer = "team@example.com"
 ```
 
 **Files Delivered**:
-- `plugins/poetry-pycontainer/pyproject.toml` - Package metadata
-- `plugins/poetry-pycontainer/src/poetry_pycontainer/plugin.py` - Plugin implementation
-- `plugins/poetry-pycontainer/README.md` - Comprehensive documentation
+- `plugins/poetry-oci/pyproject.toml` - Package metadata
+- `plugins/poetry-oci/src/poetry_oci/plugin.py` - Plugin implementation
+- `plugins/poetry-oci/README.md` - Comprehensive documentation
 
 ---
 
 ### ✅ 3.2: Hatch Build Hook
 
 **Status**: Complete  
-**Location**: `plugins/hatch-pycontainer/`
+**Location**: `plugins/hatch-oci/`
 
 Created a Hatch plugin that hooks into the build process to automatically create container images.
 
 **Features Implemented**:
-- Build hook integration (`[tool.hatch.build.hooks.pycontainer]`)
+- Build hook integration (`[tool.hatch.build.hooks.pyoci]`)
 - Automatic execution during `hatch build`
 - Environment-specific builds (dev, prod, etc.)
 - Skip functionality for selective builds
@@ -71,26 +71,26 @@ Created a Hatch plugin that hooks into the build process to automatically create
 
 **Usage**:
 ```bash
-pip install hatch-pycontainer
+pip install hatch-oci
 hatch build  # Builds both wheel and container
 ```
 
 **Configuration Example**:
 ```toml
-[tool.hatch.build.hooks.pycontainer]
+[tool.hatch.build.hooks.pyoci]
 tag = "myapp:latest"
 base-image = "python:3.11-slim"
 include-deps = true
 push = false
 
-[tool.hatch.build.hooks.pycontainer.env]
+[tool.hatch.build.hooks.pyoci.env]
 ENV = "production"
 ```
 
 **Files Delivered**:
-- `plugins/hatch-pycontainer/pyproject.toml` - Package metadata
-- `plugins/hatch-pycontainer/src/hatch_pycontainer/hooks.py` - Build hook implementation
-- `plugins/hatch-pycontainer/README.md` - Comprehensive documentation
+- `plugins/hatch-oci/pyproject.toml` - Package metadata
+- `plugins/hatch-oci/src/hatch_oci/hooks.py` - Build hook implementation
+- `plugins/hatch-oci/README.md` - Comprehensive documentation
 
 ---
 
@@ -99,7 +99,7 @@ ENV = "production"
 **Status**: Complete  
 **Location**: `docs/azd-integration.md`
 
-Created comprehensive documentation and examples for using pycontainer-build with Azure Developer CLI.
+Created comprehensive documentation and examples for using pyoci with Azure Developer CLI.
 
 **Features Documented**:
 - azd hook integration patterns
@@ -123,11 +123,11 @@ services:
     hooks:
       prebuild:
         shell: sh
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --base-image python:3.11-slim \
             --include-deps \
@@ -149,7 +149,7 @@ services:
 ### ✅ 3.4: GitHub Actions Workflow
 
 **Status**: Complete  
-**Location**: `.github/workflows/pycontainer-build.yml`
+**Location**: `.github/workflows/pyoci.yml`
 
 Created a reusable GitHub Actions workflow for building and pushing container images.
 
@@ -167,7 +167,7 @@ Created a reusable GitHub Actions workflow for building and pushing container im
 ```yaml
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:${{ github.sha }}
       base-image: python:3.11-slim
@@ -185,7 +185,7 @@ jobs:
 4. PR preview images (build without push)
 
 **Files Delivered**:
-- `.github/workflows/pycontainer-build.yml` - Reusable workflow
+- `.github/workflows/pyoci.yml` - Reusable workflow
 - `.github/workflows/example-build.yml.example` - Complete examples
 - `docs/github-actions.md` - Comprehensive guide (7KB+ documentation)
 
@@ -224,7 +224,7 @@ All success criteria from the implementation plan have been met:
 All plugins follow a consistent pattern:
 
 ```
-plugins/{tool}-pycontainer/
+plugins/{tool}-pyoci/
 ├── pyproject.toml or package.json    # Package metadata
 ├── README.md                          # User documentation
 └── src/{tool}_pycontainer/           # Implementation
@@ -234,11 +234,11 @@ plugins/{tool}-pycontainer/
 
 ### Integration Points
 
-Each plugin integrates with pycontainer-build via the Python API:
+Each plugin integrates with pyoci via the Python API:
 
 ```python
-from pycontainer.config import BuildConfig
-from pycontainer.builder import ImageBuilder
+from pyoci.config import BuildConfig
+from pyoci.builder import ImageBuilder
 
 config = BuildConfig(
     tag="myapp:latest",
@@ -267,13 +267,13 @@ builder.build()
    - Environment-specific builds
    - Complete working examples
 
-3. **Poetry Plugin** (`plugins/poetry-pycontainer/README.md`)
+3. **Poetry Plugin** (`plugins/poetry-oci/README.md`)
    - 7KB+ user guide
    - Configuration reference
    - CI/CD integration examples
    - Advanced usage patterns
 
-4. **Hatch Plugin** (`plugins/hatch-pycontainer/README.md`)
+4. **Hatch Plugin** (`plugins/hatch-oci/README.md`)
    - 7KB+ user guide
    - Build hook configuration
    - Environment-based builds
@@ -330,8 +330,8 @@ While comprehensive unit tests are deferred to future work, all integrations hav
 ### Planned Improvements
 
 1. **PyPI Publishing**
-   - Publish poetry-pycontainer to PyPI
-   - Publish hatch-pycontainer to PyPI
+   - Publish poetry-oci to PyPI
+   - Publish hatch-oci to PyPI
    - Set up automated releases
 
 2. **Additional Plugins**
@@ -370,14 +370,14 @@ While comprehensive unit tests are deferred to future work, all integrations hav
 
 ### Developer Experience
 
-Phase 3 transforms pycontainer-build from a CLI tool into a comprehensive ecosystem:
+Phase 3 transforms pyoci from a CLI tool into a comprehensive ecosystem:
 
 - **Before**: Developers must use CLI directly or write custom scripts
 - **After**: Native integration with their preferred tools (Poetry, Hatch, GitHub Actions, azd)
 
 ### Ecosystem Adoption
 
-These integrations position pycontainer-build for wider adoption:
+These integrations position pyoci for wider adoption:
 - Poetry and Hatch users can adopt with minimal friction
 - GitHub Actions users get reusable workflows
 - Azure developers get azd integration
@@ -409,11 +409,11 @@ All integrations support Docker-free development:
 
 ## Conclusion
 
-Phase 3 successfully delivers a complete toolchain integration suite for pycontainer-build. Core milestones are complete with production-ready implementations and comprehensive documentation.
+Phase 3 successfully delivers a complete toolchain integration suite for pyoci. Core milestones are complete with production-ready implementations and comprehensive documentation.
 
-The integrations enable developers to use pycontainer-build seamlessly within their existing workflows, whether they prefer Poetry, Hatch, GitHub Actions, or Azure Developer CLI.
+The integrations enable developers to use pyoci seamlessly within their existing workflows, whether they prefer Poetry, Hatch, GitHub Actions, or Azure Developer CLI.
 
-This phase sets the foundation for ecosystem adoption and positions pycontainer-build as a first-class container building solution for Python projects.
+This phase sets the foundation for ecosystem adoption and positions pyoci as a first-class container building solution for Python projects.
 
 ## Next Steps
 

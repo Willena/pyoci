@@ -1,10 +1,10 @@
 # Azure Developer CLI (azd) Integration
 
-This guide explains how to use pycontainer-build with Azure Developer CLI (azd) to deploy Python applications to Azure without requiring Docker.
+This guide explains how to use pyoci with Azure Developer CLI (azd) to deploy Python applications to Azure without requiring Docker.
 
 ## Overview
 
-Azure Developer CLI (azd) is a tool for deploying applications to Azure. By integrating pycontainer-build, you can:
+Azure Developer CLI (azd) is a tool for deploying applications to Azure. By integrating pyoci, you can:
 
 - Deploy Python apps to Azure Container Apps without Docker installed
 - Build container images natively using pure Python
@@ -16,7 +16,7 @@ Azure Developer CLI (azd) is a tool for deploying applications to Azure. By inte
 - [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd) installed
 - Python 3.11+
 - Azure subscription
-- pycontainer-build installed: `pip install pycontainer-build`
+- pyoci installed: `pip install pyoci`
 
 ## Quick Start
 
@@ -49,18 +49,18 @@ services:
     hooks:
       prebuild:
         shell: sh
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --include-deps \
             --context ${SERVICE_PATH} \
             --push
 ```
 
-> **Note**: The `--base-image` flag is optional. pycontainer-build will auto-detect the Python version from your `pyproject.toml` (`requires-python` field) and use the appropriate base image (e.g., `python:3.11-slim`). You can override this by explicitly setting `--base-image python:3.12-slim` or any custom base image.
+> **Note**: The `--base-image` flag is optional. pyoci will auto-detect the Python version from your `pyproject.toml` (`requires-python` field) and use the appropriate base image (e.g., `python:3.11-slim`). You can override this by explicitly setting `--base-image python:3.12-slim` or any custom base image.
 
 ### 3. Deploy
 
@@ -69,7 +69,7 @@ services:
 azd up
 
 # This will:
-# 1. Install pycontainer-build
+# 1. Install pyoci
 # 2. Build your container image (without Docker!)
 # 3. Push to Azure Container Registry
 # 4. Deploy to Azure Container Apps
@@ -90,11 +90,11 @@ services:
     hooks:
       prebuild:
         shell: sh
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --base-image python:3.11-slim \
             --include-deps \
@@ -118,11 +118,11 @@ services:
     hooks:
       prebuild:
         shell: sh
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --base-image python:3.11-slim \
             --context ${SERVICE_PATH} \
@@ -137,11 +137,11 @@ services:
     hooks:
       prebuild:
         shell: sh
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --base-image python:3.11-slim \
             --context ${SERVICE_PATH} \
@@ -162,11 +162,11 @@ services:
     hooks:
       prebuild:
         shell: sh
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --base-image python:3.11-slim \
             --include-deps \
@@ -190,7 +190,7 @@ You can also set custom environment variables:
 hooks:
   build:
     shell: sh
-    run: pycontainer build --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} --push
+    run: pyoci build --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} --push
     env:
       - PYCONTAINER_BASE_IMAGE: python:3.11-slim
       - PYCONTAINER_INCLUDE_DEPS: "true"
@@ -200,7 +200,7 @@ hooks:
 
 ### Azure Container Registry (ACR)
 
-azd automatically handles ACR authentication. pycontainer-build will use:
+azd automatically handles ACR authentication. pyoci will use:
 
 1. Azure CLI credentials (`az acr login`)
 2. Environment variables set by azd
@@ -216,7 +216,7 @@ If using a custom registry:
 hooks:
   build:
     shell: sh
-    run: pycontainer build --tag myregistry.io/myapp:${SERVICE_IMAGE_TAG} --push
+    run: pyoci build --tag myregistry.io/myapp:${SERVICE_IMAGE_TAG} --push
     env:
       - REGISTRY_USERNAME: ${REGISTRY_USERNAME}
       - REGISTRY_PASSWORD: ${REGISTRY_PASSWORD}
@@ -242,7 +242,7 @@ myapp/
 
 ## Advanced Configuration
 
-### Using pycontainer.toml
+### Using pyoci.toml
 
 For complex builds, use a configuration file:
 
@@ -252,14 +252,14 @@ hooks:
   build:
     shell: sh
     run: |
-      pycontainer build \
-        --config pycontainer.toml \
+      pyoci build \
+        --config pyoci.toml \
         --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
         --push
 ```
 
 ```toml
-# pycontainer.toml
+# pyoci.toml
 [build]
 base_image = "python:3.11-slim"
 workdir = "/app"
@@ -283,7 +283,7 @@ hooks:
     shell: sh
     run: |
       # Use distroless for smaller images
-      pycontainer build \
+      pyoci build \
         --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
         --base-image gcr.io/distroless/python3-debian12 \
         --include-deps \
@@ -298,14 +298,14 @@ hooks:
     shell: sh
     run: |
       if [ "${AZURE_ENV_NAME}" = "production" ]; then
-        pycontainer build \
+        pyoci build \
           --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
           --base-image python:3.11-slim \
           --include-deps \
           --sbom spdx \
           --push
       else
-        pycontainer build \
+        pyoci build \
           --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
           --base-image python:3.11 \
           --include-deps \
@@ -318,8 +318,8 @@ hooks:
 Test your azd configuration locally:
 
 ```bash
-# Install pycontainer-build
-pip install pycontainer-build
+# Install pyoci
+pip install pyoci
 
 # Test the build locally
 export SERVICE_IMAGE_NAME="localhost:5000/myapp"
@@ -327,7 +327,7 @@ export SERVICE_IMAGE_TAG="dev"
 export SERVICE_PATH="./src"
 
 # Run the build command
-pycontainer build \
+pyoci build \
   --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
   --base-image python:3.11-slim \
   --context ${SERVICE_PATH} \
@@ -336,15 +336,15 @@ pycontainer build \
 
 ## Troubleshooting
 
-### Build Fails: "pycontainer not found"
+### Build Fails: "pyoci not found"
 
-Ensure the prebuild hook installs pycontainer-build:
+Ensure the prebuild hook installs pyoci:
 
 ```yaml
 hooks:
   prebuild:
     shell: sh
-    run: pip install pycontainer-build
+    run: pip install pyoci
 ```
 
 ### Authentication Fails to ACR
@@ -372,15 +372,15 @@ hooks:
   build:
     shell: sh
     run: |
-      pycontainer build \
+      pyoci build \
         --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
         --base-image python:3.11-slim \
         --include-deps \
         --push
-        # Caching is enabled by default (~/.pycontainer/cache)
+        # Caching is enabled by default (~/.pyoci/cache)
 ```
 
-## Benefits of Using pycontainer-build with azd
+## Benefits of Using pyoci with azd
 
 1. **No Docker Required** - Works in Codespaces, DevBox, and restricted environments
 2. **Simpler Setup** - No Docker installation or configuration
@@ -422,11 +422,11 @@ services:
         shell: sh
         run: |
           pip install --upgrade pip
-          pip install pycontainer-build
+          pip install pyoci
       build:
         shell: sh
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --base-image python:3.11-slim \
             --context ${SERVICE_PATH} \
@@ -461,5 +461,5 @@ That's it! Your Python app is now deployed to Azure Container Apps without Docke
 
 - [Azure Developer CLI Documentation](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/)
 - [Azure Container Apps Documentation](https://learn.microsoft.com/en-us/azure/container-apps/)
-- [pycontainer-build Configuration](../README.md#configuration)
+- [pyoci Configuration](../README.md#configuration)
 - [GitHub Actions Integration](./github-actions.md)

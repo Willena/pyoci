@@ -1,6 +1,6 @@
 # Local Development Guide
 
-Complete guide for using pycontainer-build locally during development, including installation, building images, testing, and troubleshooting.
+Complete guide for using pyoci locally during development, including installation, building images, testing, and troubleshooting.
 
 ---
 
@@ -12,8 +12,8 @@ The recommended way for local development:
 
 ```bash
 # Clone the repository
-git clone https://github.com/spboyer/pycontainer-build.git
-cd pycontainer-build
+git clone https://github.com/willena/pyoci.git
+cd pyoci
 
 # Create and activate a virtual environment
 python -m venv .venv
@@ -23,16 +23,16 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
-This installs the `pycontainer` command globally in your virtual environment, and any code changes you make are immediately reflected.
+This installs the `pyoci` command globally in your virtual environment, and any code changes you make are immediately reflected.
 
 ### Verify Installation
 
 ```bash
 # Check that the command is available
-pycontainer --help
+pyoci --help
 
 # Verify the Python API works
-python -c "from pycontainer.builder import ImageBuilder; print('✓ Import successful')"
+python -c "from pyoci.builder import ImageBuilder; print('✓ Import successful')"
 ```
 
 ---
@@ -43,13 +43,13 @@ python -c "from pycontainer.builder import ImageBuilder; print('✓ Import succe
 
 ```bash
 # Build from the current directory
-pycontainer build --tag myapp:latest
+pyoci build --tag myapp:latest
 
 # Build from a specific directory
-pycontainer build --tag myapp:latest --context /path/to/project
+pyoci build --tag myapp:latest --context /path/to/project
 
 # Build with verbose output
-pycontainer build --tag myapp:latest --verbose
+pyoci build --tag myapp:latest --verbose
 ```
 
 ### Output Location
@@ -73,25 +73,25 @@ By default, images are created at:
 
 ```bash
 # Build with auto-detected Python base image
-pycontainer build \
+pyoci build \
   --tag myapp:latest \
   --include-deps
 
 # Or explicitly specify a base image
-pycontainer build \
+pyoci build \
   --tag myapp:latest \
   --base-image python:3.12-slim \
   --include-deps
 
 # Build for different platform (e.g., amd64 from ARM Mac)
-pycontainer build \
+pyoci build \
   --tag myapp:amd64 \
   --base-image python:3.11-slim \
   --platform linux/amd64 \
   --include-deps
 
 # Build for ARM64 (e.g., for AWS Graviton instances)
-pycontainer build \
+pyoci build \
   --tag myapp:arm64 \
   --base-image python:3.11-slim \
   --platform linux/arm64 \
@@ -108,7 +108,7 @@ pycontainer build \
 
 ```bash
 # Dry-run mode - see what will be built without creating files
-pycontainer build --tag myapp:latest --dry-run --verbose
+pyoci build --tag myapp:latest --dry-run --verbose
 ```
 
 This shows:
@@ -122,7 +122,7 @@ This shows:
 
 ## 🧪 Testing Your Builds
 
-> **Important**: `pycontainer` creates OCI-compliant image layouts in `dist/image/`. These are not directly runnable by Docker without importing. See the options below for testing your built images.
+> **Important**: `pyoci` creates OCI-compliant image layouts in `dist/image/`. These are not directly runnable by Docker without importing. See the options below for testing your built images.
 
 ### Option 1: Use Skopeo (Recommended for OCI Layouts)
 
@@ -139,8 +139,8 @@ sudo apt-get install skopeo
 # Fedora/RHEL:
 sudo dnf install skopeo
 
-# 1. Build the image with pycontainer
-pycontainer build --tag myapp:latest --base-image python:3.11-slim --include-deps
+# 1. Build the image with pyoci
+pyoci build --tag myapp:latest --base-image python:3.11-slim --include-deps
 
 # 2. Copy the OCI layout to Docker daemon
 skopeo copy oci:dist/image docker-daemon:myapp:latest
@@ -169,8 +169,8 @@ sudo apt-get install podman
 # Fedora/RHEL (included by default):
 sudo dnf install podman
 
-# 1. Build with pycontainer
-pycontainer build --tag myapp:latest --base-image python:3.11-slim --include-deps
+# 1. Build with pyoci
+pyoci build --tag myapp:latest --base-image python:3.11-slim --include-deps
 
 # 2. Run directly from the OCI layout
 podman run --rm -p 8000:8000 oci:dist/image:myapp
@@ -185,8 +185,8 @@ podman run -p 8000:8000 localhost/myapp:latest
 If you only have Docker and can't install skopeo:
 
 ```bash
-# 1. Build the image with pycontainer
-pycontainer build --tag myapp:latest --base-image python:3.11-slim --include-deps
+# 1. Build the image with pyoci
+pyoci build --tag myapp:latest --base-image python:3.11-slim --include-deps
 
 # 2. Create a tar archive and import (less efficient)
 tar -C dist/image -czf - . | docker import - myapp:latest
@@ -201,8 +201,8 @@ docker run -p 8000:8000 myapp:latest
 ### Option 2: Use Podman
 
 ```bash
-# Build with pycontainer
-pycontainer build --tag myapp:latest --base-image python:3.11-slim --include-deps
+# Build with pyoci
+pyoci build --tag myapp:latest --base-image python:3.11-slim --include-deps
 
 # Import into Podman
 podman load -i <(tar -C dist/image -cf - .)
@@ -222,7 +222,7 @@ docker run -d -p 5000:5000 --name registry registry:2
 podman run -d -p 5000:5000 --name registry docker.io/library/registry:2
 
 # Build and push to local registry
-pycontainer build \
+pyoci build \
   --tag localhost:5000/myapp:latest \
   --base-image python:3.11-slim \
   --include-deps \
@@ -257,7 +257,7 @@ python -m app  # or uvicorn app.main:app, etc.
 
 ## 🐳 Understanding OCI vs Docker Images
 
-**Key Concept**: `pycontainer` creates **OCI image layouts**, not Docker-specific images.
+**Key Concept**: `pyoci` creates **OCI image layouts**, not Docker-specific images.
 
 | Format | What is it? | Tools that understand it |
 |--------|-------------|--------------------------|
@@ -285,22 +285,22 @@ python -m app  # or uvicorn app.main:app, etc.
 ### Typical Local Development Flow
 
 ```bash
-# 1. Make code changes to pycontainer-build
-vim src/pycontainer/builder.py
+# 1. Make code changes to pyoci
+vim src/pyoci/builder.py
 
 # 2. Test with a sample project
 cd examples/fastapi-app
-pycontainer build --tag test:latest --verbose --dry-run
+pyoci build --tag test:latest --verbose --dry-run
 
 # 3. Build a real image
-pycontainer build --tag test:latest --base-image python:3.11-slim --include-deps
+pyoci build --tag test:latest --base-image python:3.11-slim --include-deps
 
 # 4. Test the image
 docker load -i <(tar -C dist/image -cf - .)
 docker run -p 8000:8000 test:latest
 curl http://localhost:8000
 
-# 5. Iterate - changes to pycontainer source are live (editable install)
+# 5. Iterate - changes to pyoci source are live (editable install)
 ```
 
 ### Quick Iteration with Examples
@@ -310,7 +310,7 @@ The `examples/` directory contains ready-to-use test projects:
 ```bash
 # FastAPI example
 cd examples/fastapi-app
-pycontainer build --tag fastapi-test:latest --include-deps --verbose
+pyoci build --tag fastapi-test:latest --include-deps --verbose
 
 # Test the output structure
 tree dist/image
@@ -327,7 +327,7 @@ cat dist/image/index.json | jq .
 
 ```bash
 # Create a test config file
-cat > pycontainer.toml << EOF
+cat > pyoci.toml << EOF
 [build]
 base_image = "python:3.11-slim"
 workdir = "/app"
@@ -344,10 +344,10 @@ version = "dev"
 EOF
 
 # Build with the config
-pycontainer build --tag myapp:dev --config pycontainer.toml --verbose
+pyoci build --tag myapp:dev --config pyoci.toml --verbose
 
 # Or force a fresh output layout for this run
-pycontainer build --tag myapp:dev --config pycontainer.toml --clean-output-dir --verbose
+pyoci build --tag myapp:dev --config pyoci.toml --clean-output-dir --verbose
 
 # Verify the config was applied
 jq '.config' dist/image/blobs/sha256/<config-digest>
@@ -357,10 +357,10 @@ jq '.config' dist/image/blobs/sha256/<config-digest>
 
 ```bash
 # See what entry point is detected
-pycontainer build --tag myapp:latest --dry-run --verbose | grep -i "entry"
+pyoci build --tag myapp:latest --dry-run --verbose | grep -i "entry"
 
 # Override with explicit entry point
-pycontainer build \
+pyoci build \
   --tag myapp:latest \
   --entrypoint '["python", "-m", "myapp.cli"]'
 ```
@@ -369,7 +369,7 @@ pycontainer build \
 
 ```bash
 # Generate SPDX SBOM
-pycontainer build --tag myapp:latest --sbom spdx --verbose
+pyoci build --tag myapp:latest --sbom spdx --verbose
 
 # Check the SBOM was created
 ls -lh dist/image/sbom.spdx.json
@@ -383,7 +383,7 @@ cat dist/image/sbom.spdx.json | jq '.packages[].name'
 ```bash
 # FastAPI project
 cd examples/fastapi-app
-pycontainer build --tag test:latest --dry-run --verbose
+pyoci build --tag test:latest --dry-run --verbose
 # Should show: "Detected framework: fastapi"
 
 # Flask project (create test)
@@ -399,7 +399,7 @@ EOF
 
 echo '[project]\nname="flask-test"\nversion="0.1.0"' > pyproject.toml
 
-pycontainer build --tag flask-test:latest --dry-run --verbose
+pyoci build --tag flask-test:latest --dry-run --verbose
 # Should show: "Detected framework: flask"
 ```
 
@@ -407,23 +407,23 @@ pycontainer build --tag flask-test:latest --dry-run --verbose
 
 ```bash
 # First build (cold cache)
-time pycontainer build --tag myapp:v1 --base-image python:3.11-slim --include-deps
+time pyoci build --tag myapp:v1 --base-image python:3.11-slim --include-deps
 
 # Second build (warm cache - should be faster)
-time pycontainer build --tag myapp:v2 --base-image python:3.11-slim --include-deps
+time pyoci build --tag myapp:v2 --base-image python:3.11-slim --include-deps
 
 # Check cache usage
-ls -lh ~/.pycontainer/cache/layers/
+ls -lh ~/.pyoci/cache/layers/
 
 # Force rebuild without cache
-pycontainer build --tag myapp:v3 --base-image python:3.11-slim --include-deps --no-cache
+pyoci build --tag myapp:v3 --base-image python:3.11-slim --include-deps --no-cache
 ```
 
 ### Use Case 6: Cross-Platform Builds
 
 ```bash
 # Build for AMD64 from your ARM Mac
-pycontainer build \
+pyoci build \
   --tag myapp:amd64 \
   --platform linux/amd64 \
   --base-image python:3.11-slim \
@@ -437,7 +437,7 @@ jq '.architecture, .os' dist/image/blobs/sha256/$CONFIG_DIGEST
 # Output: "amd64" "linux"
 
 # Build for ARM64 (AWS Graviton, Raspberry Pi, etc.)
-pycontainer build \
+pyoci build \
   --tag myapp:arm64 \
   --platform linux/arm64 \
   --base-image python:3.11-slim \
@@ -446,7 +446,7 @@ pycontainer build \
 # Build for both platforms and push
 for PLATFORM in linux/amd64 linux/arm64; do
   ARCH=$(echo $PLATFORM | cut -d/ -f2)
-  pycontainer build \
+  pyoci build \
     --tag ghcr.io/user/myapp:${ARCH} \
     --platform $PLATFORM \
     --push
@@ -497,8 +497,8 @@ tree /tmp/layer
 ### Compare With Docker Images
 
 ```bash
-# Build with pycontainer
-pycontainer build --tag myapp:pycontainer --base-image python:3.11-slim --include-deps
+# Build with pyoci
+pyoci build --tag myapp:pyoci --base-image python:3.11-slim --include-deps
 
 # Build equivalent with Docker
 cat > Dockerfile << EOF
@@ -528,7 +528,7 @@ cat manifest.json | jq .
 
 ```bash
 # See detailed build progress
-pycontainer build --tag myapp:latest --verbose
+pyoci build --tag myapp:latest --verbose
 
 # Outputs:
 # - Project detection results
@@ -546,7 +546,7 @@ pycontainer build --tag myapp:latest --verbose
 
 ```bash
 # Option 1: CLI flag
-pycontainer build --tag myapp:latest --entrypoint '["python", "-m", "myapp"]'
+pyoci build --tag myapp:latest --entrypoint '["python", "-m", "myapp"]'
 
 # Option 2: Add to pyproject.toml
 [project.scripts]
@@ -568,7 +568,7 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 az acr login --name myregistry
 
 # Then build
-pycontainer build --tag myapp:latest --base-image python:3.11-slim
+pyoci build --tag myapp:latest --base-image python:3.11-slim
 ```
 
 #### Issue: "Dependencies not found in image"
@@ -580,7 +580,7 @@ pycontainer build --tag myapp:latest --base-image python:3.11-slim
 pip install -r requirements.txt
 
 # Then build with --include-deps
-pycontainer build --tag myapp:latest --base-image python:3.11-slim --include-deps
+pyoci build --tag myapp:latest --base-image python:3.11-slim --include-deps
 ```
 
 #### Issue: "Permission denied writing to dist/"
@@ -595,7 +595,7 @@ ls -ld dist/
 chmod -R u+w dist/
 
 # Or use a different output directory
-pycontainer build --tag myapp:latest --output /tmp/myimage
+pyoci build --tag myapp:latest --output /tmp/myimage
 ```
 
 #### Issue: "Cache is stale or corrupted"
@@ -604,10 +604,10 @@ pycontainer build --tag myapp:latest --output /tmp/myimage
 
 ```bash
 # Remove cache
-rm -rf ~/.pycontainer/cache
+rm -rf ~/.pyoci/cache
 
 # Rebuild
-pycontainer build --tag myapp:latest --no-cache
+pyoci build --tag myapp:latest --no-cache
 ```
 
 ### Debug with Python API
@@ -615,8 +615,8 @@ pycontainer build --tag myapp:latest --no-cache
 For deeper debugging, use the Python API:
 
 ```python
-from pycontainer.config import BuildConfig
-from pycontainer.builder import ImageBuilder
+from pyoci.config import BuildConfig
+from pyoci.builder import ImageBuilder
 import logging
 
 # Enable debug logging
@@ -649,13 +649,13 @@ except Exception as e:
 
 ```bash
 # 1. Use cache (enabled by default)
-pycontainer build --tag myapp:latest --base-image python:3.11-slim --include-deps
+pyoci build --tag myapp:latest --base-image python:3.11-slim --include-deps
 
 # 2. Use smaller base images
-pycontainer build --tag myapp:latest --base-image python:3.11-alpine --include-deps
+pyoci build --tag myapp:latest --base-image python:3.11-alpine --include-deps
 
 # 3. Include only necessary files
-pycontainer build \
+pyoci build \
   --tag myapp:latest \
   --include src/ \
   --include pyproject.toml \
@@ -666,14 +666,14 @@ pycontainer build \
 
 ```bash
 # Use distroless for smaller images
-pycontainer build --tag myapp:latest --base-image gcr.io/distroless/python3-debian11
+pyoci build --tag myapp:latest --base-image gcr.io/distroless/python3-debian11
 
 # Or use Alpine
-pycontainer build --tag myapp:latest --base-image python:3.11-alpine
+pyoci build --tag myapp:latest --base-image python:3.11-alpine
 
 # Don't include unnecessary dependencies
 pip install --no-dev -r requirements.txt
-pycontainer build --tag myapp:latest --include-deps
+pyoci build --tag myapp:latest --include-deps
 ```
 
 
@@ -681,14 +681,14 @@ pycontainer build --tag myapp:latest --include-deps
 
 ```bash
 # Add Poetry plugin
-poetry self add poetry-pycontainer
+poetry self add poetry-oci
 
 # Build container
 cd /path/to/poetry/project
 poetry build-container --tag myapp:latest
 
 # Configuration via pyproject.toml
-[tool.pycontainer]
+[tool.pyoci]
 base_image = "python:3.11-slim"
 include_deps = true
 push = false
@@ -698,14 +698,14 @@ push = false
 
 ```bash
 # Install Hatch plugin
-pip install hatch-pycontainer
+pip install hatch-oci
 
 # Build (creates both wheel and container)
 cd /path/to/hatch/project
 hatch build
 
 # Configuration via pyproject.toml
-[tool.hatch.build.hooks.pycontainer]
+[tool.hatch.build.hooks.pyoci]
 base_image = "python:3.11-slim"
 include_deps = true
 ```
@@ -722,7 +722,7 @@ Try these ready-made examples:
 cd examples/fastapi-app
 
 # Quick build
-pycontainer build --tag fastapi-demo:latest --include-deps --verbose
+pyoci build --tag fastapi-demo:latest --include-deps --verbose
 
 # Test locally
 docker load -i <(tar -C dist/image -cf - .)
@@ -737,7 +737,7 @@ curl http://localhost:8000
 mkdir minimal-test && cd minimal-test
 
 cat > app.py << 'EOF'
-print("Hello from pycontainer!")
+print("Hello from pyoci!")
 EOF
 
 cat > pyproject.toml << 'EOF'
@@ -747,7 +747,7 @@ version = "0.1.0"
 EOF
 
 # Build
-pycontainer build --tag minimal:latest --verbose
+pyoci build --tag minimal:latest --verbose
 
 # Inspect
 tree dist/image
@@ -769,7 +769,7 @@ tree dist/image
 1. **Always use `--verbose`** during development to understand what's happening
 2. **Use `--dry-run`** to preview builds before creating artifacts
 3. **Test with multiple base images** (slim, alpine, distroless) to find the best fit
-4. **Keep `pycontainer.toml`** in your project for consistent builds
+4. **Keep `pyoci.toml`** in your project for consistent builds
 5. **Use cache** for faster iterations (don't disable unless debugging cache issues)
 6. **Version your images** with meaningful tags (not just `latest`)
 7. **Generate SBOMs** for security compliance (`--sbom spdx`)
@@ -779,7 +779,7 @@ tree dist/image
 
 ## 🆘 Getting Help
 
-- **GitHub Issues**: [spboyer/pycontainer-build](https://github.com/spboyer/pycontainer-build/issues)
+- **GitHub Issues**: [willena/pyoci](https://github.com/willena/pyoci/issues)
 - **Documentation**: See other files in [docs/](.)
 - **Examples**: Check [examples/](../examples/)
 - **Architecture**: Read [ARCHITECTURE.md](../ARCHITECTURE.md)

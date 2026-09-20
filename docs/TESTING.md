@@ -1,8 +1,8 @@
-# Testing Strategy: pycontainer-build
+# Testing Strategy: pyoci
 
 ## Overview
 
-This document defines the comprehensive testing strategy for pycontainer-build, ensuring quality, reliability, and correctness at every phase of development.
+This document defines the comprehensive testing strategy for pyoci, ensuring quality, reliability, and correctness at every phase of development.
 
 ---
 
@@ -55,8 +55,8 @@ This document defines the comprehensive testing strategy for pycontainer-build, 
 # tests/unit/test_builder.py
 import pytest
 from unittest.mock import Mock, patch
-from pycontainer.builder import ImageBuilder
-from pycontainer.config import BuildConfig
+from pyoci.builder import ImageBuilder
+from pyoci.config import BuildConfig
 
 class TestImageBuilder:
     def test_build_creates_layer_tar(self, tmp_path):
@@ -71,7 +71,7 @@ class TestImageBuilder:
         (tmp_path / "app.py").write_text("print('hello')")
         
         builder = ImageBuilder(config)
-        with patch("pycontainer.builder.hash_file") as mock_hash:
+        with patch("pyoci.builder.hash_file") as mock_hash:
             mock_hash.return_value = "abc123"
             builder.build()
         
@@ -129,7 +129,7 @@ class TestImageBuilder:
 pytest tests/unit/
 
 # Run with coverage
-pytest tests/unit/ --cov=pycontainer --cov-report=html
+pytest tests/unit/ --cov=pyoci --cov-report=html
 
 # Run specific test file
 pytest tests/unit/test_builder.py
@@ -170,8 +170,8 @@ pytest tests/integration/
 # tests/integration/test_registry_push.py
 import pytest
 import subprocess
-from pycontainer.builder import ImageBuilder
-from pycontainer.config import BuildConfig
+from pyoci.builder import ImageBuilder
+from pyoci.config import BuildConfig
 
 @pytest.fixture
 def local_registry():
@@ -347,7 +347,7 @@ def test_fastapi_app_deployment():
     subprocess.run([
         "az", "containerapp", "create",
         "--name", app_name,
-        "--resource-group", "pycontainer-e2e-tests",
+        "--resource-group", "pyoci-e2e-tests",
         "--image", "testacr.azurecr.io/fastapi-test:e2e",
         "--ingress", "external",
         "--target-port", "8000"
@@ -357,7 +357,7 @@ def test_fastapi_app_deployment():
     result = subprocess.run([
         "az", "containerapp", "show",
         "--name", app_name,
-        "--resource-group", "pycontainer-e2e-tests",
+        "--resource-group", "pyoci-e2e-tests",
         "--query", "properties.configuration.ingress.fqdn",
         "-o", "tsv"
     ], capture_output=True, text=True, check=True)
@@ -375,7 +375,7 @@ def test_fastapi_app_deployment():
     subprocess.run([
         "az", "containerapp", "delete",
         "--name", app_name,
-        "--resource-group", "pycontainer-e2e-tests",
+        "--resource-group", "pyoci-e2e-tests",
         "--yes"
     ])
 ```
@@ -453,12 +453,12 @@ def test_github_actions_workflow():
 @pytest.mark.e2e
 def test_azd_up_without_docker():
     """
-    Test azd up workflow using pycontainer (no Docker installed).
+    Test azd up workflow using pyoci (no Docker installed).
     """
     # 1. Create azd project
     project = create_azd_python_project()
     
-    # 2. Configure azd to use pycontainer
+    # 2. Configure azd to use pyoci
     update_azure_yaml(project, build_type="python-sdk-container")
     
     # 3. Run azd up (provisions + deploys)
@@ -479,10 +479,10 @@ def test_azd_up_without_docker():
 
 **Azure Resources** (deployed once, shared across tests):
 
-- Resource Group: `pycontainer-e2e-tests`
+- Resource Group: `pyoci-e2e-tests`
 - Azure Container Registry: `pycontainere2e.azurecr.io`
-- AKS Cluster: `pycontainer-e2e-aks`
-- Azure Container Apps Environment: `pycontainer-e2e-env`
+- AKS Cluster: `pyoci-e2e-aks`
+- Azure Container Apps Environment: `pyoci-e2e-env`
 
 **Cleanup Strategy**:
 
@@ -621,7 +621,7 @@ jobs:
       
       - name: Run unit tests
         run: |
-          pytest tests/unit/ --cov=pycontainer --cov-report=xml
+          pytest tests/unit/ --cov=pyoci --cov-report=xml
       
       - name: Upload coverage
         uses: codecov/codecov-action@v3
@@ -830,7 +830,7 @@ def test_base_image_os_detection(base_image, expected_os):
 ### 5. Mock External Services
 
 ```python
-@patch("pycontainer.registry_client.requests.post")
+@patch("pyoci.registry_client.requests.post")
 def test_push_blob_handles_network_error(mock_post):
     # Mock network failure
     mock_post.side_effect = requests.exceptions.ConnectionError()

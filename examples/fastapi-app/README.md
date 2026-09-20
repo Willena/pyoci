@@ -1,18 +1,18 @@
 # FastAPI Demo Application
 
-This is a sample FastAPI application demonstrating all pycontainer-build integrations.
+This is a sample FastAPI application demonstrating all pyoci integrations.
 
 ## Quick Start
 
-### Build with pycontainer-build (CLI)
+### Build with pyoci (CLI)
 
 ```bash
 cd examples/fastapi-app
 # Base image auto-detected from pyproject.toml (requires-python: ">=3.11")
-pycontainer build --tag fastapi-demo:latest --include-deps
+pyoci build --tag fastapi-demo:latest --include-deps
 
 # Or with custom base image
-pycontainer build --tag fastapi-demo:latest --base-image python:3.12-slim --include-deps
+pyoci build --tag fastapi-demo:latest --base-image python:3.12-slim --include-deps
 ```
 
 ### Build with Poetry Plugin
@@ -20,7 +20,7 @@ pycontainer build --tag fastapi-demo:latest --base-image python:3.12-slim --incl
 ```bash
 cd examples/fastapi-app
 poetry install
-poetry self add poetry-pycontainer
+poetry self add poetry-oci
 poetry build-container --tag fastapi-demo:latest
 ```
 
@@ -28,7 +28,7 @@ poetry build-container --tag fastapi-demo:latest
 
 ```bash
 cd examples/fastapi-app
-pip install hatch hatch-pycontainer
+pip install hatch hatch-oci
 hatch build  # Builds both wheel and container
 ```
 
@@ -46,10 +46,10 @@ services:
     host: containerapp
     hooks:
       prebuild:
-        run: pip install pycontainer-build
+        run: pip install pyoci
       build:
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ${SERVICE_IMAGE_NAME}:${SERVICE_IMAGE_TAG} \
             --include-deps \
             --push
@@ -74,7 +74,7 @@ on:
 
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}/fastapi-demo:${{ github.sha }}
       context: ./examples/fastapi-app
@@ -89,7 +89,7 @@ jobs:
 
 ```bash
 # Build the container
-pycontainer build --tag fastapi-demo:latest --include-deps
+pyoci build --tag fastapi-demo:latest --include-deps
 
 # Run with Docker (for testing only)
 docker run -p 8000:8000 fastapi-demo:latest
@@ -105,9 +105,9 @@ Visit http://localhost:8000 for the app and http://localhost:8000/docs for API d
 
 This example includes configuration for all integrations:
 
-- **pycontainer CLI**: Uses `pyproject.toml` [project] section
-- **Poetry plugin**: Uses `[tool.pycontainer]` section
-- **Hatch plugin**: Uses `[tool.hatch.build.hooks.pycontainer]` section
+- **pyoci CLI**: Uses `pyproject.toml` [project] section
+- **Poetry plugin**: Uses `[tool.pyoci]` section
+- **Hatch plugin**: Uses `[tool.hatch.build.hooks.pyoci]` section
 - **GitHub Actions**: Example workflow provided above
 - **Azure Developer CLI**: Example azure.yaml provided above
 
@@ -131,7 +131,7 @@ This example includes configuration for all integrations:
 
 ## Learn More
 
-- [Poetry Plugin Documentation](../../plugins/poetry-pycontainer/)
-- [Hatch Plugin Documentation](../../plugins/hatch-pycontainer/)
+- [Poetry Plugin Documentation](../../plugins/poetry-oci/)
+- [Hatch Plugin Documentation](../../plugins/hatch-oci/)
 - [GitHub Actions Documentation](../../docs/github-actions.md)
 - [Azure Developer CLI Documentation](../../docs/azd-integration.md)

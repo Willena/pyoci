@@ -1,0 +1,20 @@
+[project]
+name = "pyoci"
+version = "0.3.1"
+description = "Experimental .NET-style native OCI image builder for Python projects (no Docker daemon, no Dockerfile)."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  { name = "pyoci contributors" }
+]
+dependencies = []
+
+[project.scripts]
+pyoci = "pyoci.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,10 +1,10 @@
 # Authentication Architecture
 
-This document describes the authentication system in pycontainer-build.
+This document describes the authentication system in pyoci.
 
 ## Overview
 
-pycontainer-build supports multiple authentication methods for pushing images to container registries. The authentication system is designed to be:
+pyoci supports multiple authentication methods for pushing images to container registries. The authentication system is designed to be:
 
 - **Flexible**: Multiple auth providers with automatic fallback
 - **Secure**: No credentials stored in code, supports environment variables and external tools
@@ -41,7 +41,7 @@ Push Request
 
 ## Components
 
-### 1. Auth Providers (`src/pycontainer/auth.py`)
+### 1. Auth Providers (`src/pyoci/auth.py`)
 
 #### `AuthProvider` (ABC)
 Base interface for authentication providers.
@@ -77,7 +77,7 @@ For Azure Container Registry (`*.azurecr.io`):
 #### `ChainAuthProvider`
 Chains multiple providers, tries each in sequence.
 
-### 2. Registry Client (`src/pycontainer/registry_client.py`)
+### 2. Registry Client (`src/pyoci/registry_client.py`)
 
 #### OAuth2 Token Exchange
 When the registry returns `401 Unauthorized` with `Www-Authenticate` header:
@@ -101,7 +101,7 @@ The client:
 
 Both methods supported, auto-selected based on available credentials.
 
-### 3. Builder Integration (`src/pycontainer/builder.py`)
+### 3. Builder Integration (`src/pyoci/builder.py`)
 
 The `push()` method:
 1. Calls `get_auth_for_registry()` if no explicit credentials
@@ -137,24 +137,24 @@ The `push()` method:
 ### GitHub PAT
 ```bash
 export GITHUB_TOKEN="ghp_xxxxx"
-pycontainer build --tag ghcr.io/user/app:v1 --push
+pyoci build --tag ghcr.io/user/app:v1 --push
 ```
 
 ### Docker Login
 ```bash
 docker login ghcr.io
-pycontainer build --tag ghcr.io/user/app:v1 --push
+pyoci build --tag ghcr.io/user/app:v1 --push
 ```
 
 ### Azure CLI
 ```bash
 az login
-pycontainer build --tag myregistry.azurecr.io/app:v1 --push
+pyoci build --tag myregistry.azurecr.io/app:v1 --push
 ```
 
 ### Explicit Credentials
 ```bash
-pycontainer build \
+pyoci build \
   --tag registry.example.com/app:v1 \
   --username myuser \
   --password mytoken \
@@ -165,7 +165,7 @@ pycontainer build \
 ```bash
 export REGISTRY_USERNAME="myuser"
 export REGISTRY_PASSWORD="mypass"
-pycontainer build --tag registry.example.com/app:v1 --push
+pyoci build --tag registry.example.com/app:v1 --push
 ```
 
 ## Security Considerations
@@ -204,15 +204,15 @@ To test live authentication (manual):
 ```bash
 # Test GitHub
 export GITHUB_TOKEN="ghp_xxxxx"
-pycontainer build --tag ghcr.io/test/myapp:test --push
+pyoci build --tag ghcr.io/test/myapp:test --push
 
 # Test Docker Hub
 docker login
-pycontainer build --tag username/myapp:test --push
+pyoci build --tag username/myapp:test --push
 
 # Test ACR
 az login
-pycontainer build --tag myregistry.azurecr.io/myapp:test --push
+pyoci build --tag myregistry.azurecr.io/myapp:test --push
 ```
 
 ## Troubleshooting

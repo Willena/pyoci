@@ -1,6 +1,6 @@
-# pycontainer-build Examples
+# pyoci Examples
 
-This directory contains example applications demonstrating pycontainer-build integrations.
+This directory contains example applications demonstrating pyoci integrations.
 
 ## Available Examples
 
@@ -47,15 +47,15 @@ Demonstrates building container images for different CPU architectures:
 # Clone and navigate
 cd examples/fastapi-app
 
-# Build with pycontainer (CLI)
-pycontainer build --tag fastapi-demo:latest --include-deps
+# Build with pyoci (CLI)
+pyoci build --tag fastapi-demo:latest --include-deps
 
 # Or with Poetry
-poetry self add poetry-pycontainer
+poetry self add poetry-oci
 poetry build-container --tag fastapi-demo:latest
 
 # Or with Hatch
-pip install hatch hatch-pycontainer
+pip install hatch hatch-oci
 hatch build
 ```
 
@@ -73,8 +73,8 @@ Each example includes:
 
 | Method | Command | Configuration | Best For |
 |--------|---------|--------------|----------|
-| **CLI** | `pycontainer build` | Command-line flags | Quick builds, CI/CD |
-| **Poetry** | `poetry build-container` | `[tool.pycontainer]` | Poetry projects |
+| **CLI** | `pyoci build` | Command-line flags | Quick builds, CI/CD |
+| **Poetry** | `poetry build-container` | `[tool.pyoci]` | Poetry projects |
 | **Hatch** | `hatch build` | `[tool.hatch.build.hooks]` | Hatch projects |
 | **GitHub Actions** | Workflow file | YAML inputs | Automation |
 | **azd** | `azd up` | azure.yaml hooks | Azure deployment |

@@ -1,6 +1,6 @@
 # Cross-Platform Build Example
 
-This example demonstrates building container images for different CPU architectures (amd64, arm64) from a single machine using pycontainer-build's cross-platform support.
+This example demonstrates building container images for different CPU architectures (amd64, arm64) from a single machine using pyoci's cross-platform support.
 
 ## Overview
 
@@ -17,7 +17,7 @@ Cross-platform builds allow you to:
 
 ```bash
 # Build AMD64 image (standard x86_64 servers)
-pycontainer build \
+pyoci build \
   --tag myapp:amd64 \
   --platform linux/amd64 \
   --base-image python:3.11-slim
@@ -31,7 +31,7 @@ jq '.manifests[0].platform' dist/image/index.json
 
 ```bash
 # Build ARM64 image (AWS Graviton, Raspberry Pi, etc.)
-pycontainer build \
+pyoci build \
   --tag myapp:arm64 \
   --platform linux/arm64 \
   --base-image python:3.11-slim
@@ -53,7 +53,7 @@ for PLATFORM in linux/amd64 linux/arm64; do
   ARCH=$(echo $PLATFORM | cut -d/ -f2)
   
   echo "Building for $PLATFORM..."
-  pycontainer build \
+  pyoci build \
     --tag ${REGISTRY}:${ARCH} \
     --platform $PLATFORM \
     --base-image python:3.11-slim \
@@ -105,13 +105,13 @@ EOF
 
 ```bash
 # Build for AMD64
-pycontainer build \
+pyoci build \
   --tag cross-platform-demo:amd64 \
   --platform linux/amd64 \
   --verbose
 
 # Build for ARM64
-pycontainer build \
+pyoci build \
   --tag cross-platform-demo:arm64 \
   --platform linux/arm64 \
   --verbose
@@ -123,7 +123,7 @@ CONFIG_AMD64=$(jq -r '.config.digest' dist/image/blobs/sha256/$MANIFEST_AMD64 | 
 jq '{arch: .architecture, os: .os}' dist/image/blobs/sha256/$CONFIG_AMD64
 
 # (Rebuild for arm64 to inspect)
-pycontainer build --tag cross-platform-demo:arm64 --platform linux/arm64
+pyoci build --tag cross-platform-demo:arm64 --platform linux/arm64
 echo "=== ARM64 Config ==="
 MANIFEST_ARM64=$(jq -r '.manifests[0].digest' dist/image/index.json | cut -d: -f2)
 CONFIG_ARM64=$(jq -r '.config.digest' dist/image/blobs/sha256/$MANIFEST_ARM64 | cut -d: -f2)
@@ -138,7 +138,7 @@ Scenario: You develop on Apple Silicon but deploy to standard x86 cloud servers.
 
 ```bash
 # On your ARM Mac
-pycontainer build \
+pyoci build \
   --tag ghcr.io/myorg/myapp:latest \
   --platform linux/amd64 \
   --base-image python:3.11-slim \
@@ -155,7 +155,7 @@ Scenario: Target AWS Graviton instances for better price/performance.
 
 ```bash
 # Build for ARM64
-pycontainer build \
+pyoci build \
   --tag myapp:graviton \
   --platform linux/arm64 \
   --base-image python:3.11-slim \
@@ -190,8 +190,8 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Install pycontainer
-        run: pip install pycontainer-build
+      - name: Install pyoci
+        run: pip install pyoci
       
       - name: Extract architecture
         id: arch
@@ -199,7 +199,7 @@ jobs:
       
       - name: Build image
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ghcr.io/${{ github.repository }}:${{ steps.arch.outputs.arch }} \
             --platform ${{ matrix.platform }} \
             --base-image python:3.11-slim \
@@ -215,8 +215,8 @@ After building for both platforms, create a manifest list:
 
 ```bash
 # Build both platforms
-pycontainer build --tag ghcr.io/myorg/myapp:amd64 --platform linux/amd64 --push
-pycontainer build --tag ghcr.io/myorg/myapp:arm64 --platform linux/arm64 --push
+pyoci build --tag ghcr.io/myorg/myapp:amd64 --platform linux/amd64 --push
+pyoci build --tag ghcr.io/myorg/myapp:arm64 --platform linux/arm64 --push
 
 # Create manifest list (requires docker or crane)
 docker manifest create ghcr.io/myorg/myapp:latest \
@@ -230,7 +230,7 @@ docker manifest push ghcr.io/myorg/myapp:latest
 
 ## Configuration File Example
 
-Use `pycontainer.toml` to set default platform:
+Use `pyoci.toml` to set default platform:
 
 ```toml
 [build]
@@ -250,17 +250,17 @@ Then override for specific builds:
 
 ```bash
 # Uses amd64 from config
-pycontainer build --tag myapp:latest --config pycontainer.toml
+pyoci build --tag myapp:latest --config pyoci.toml
 
 # Override to arm64
-pycontainer build --tag myapp:arm64 --platform linux/arm64 --config pycontainer.toml
+pyoci build --tag myapp:arm64 --platform linux/arm64 --config pyoci.toml
 ```
 
 ## How It Works
 
 ### Platform Parsing
 
-pycontainer parses the platform string:
+pyoci parses the platform string:
 
 ```python
 # Input: "linux/amd64"
@@ -278,7 +278,7 @@ When pulling multi-platform base images:
 
 ```python
 # Python's base image has manifests for multiple platforms
-# pycontainer automatically selects the right one:
+# pyoci automatically selects the right one:
 
 Base image manifests:
 - linux/amd64 → sha256:abc123...
@@ -338,7 +338,7 @@ For apps with native dependencies, build on the target architecture or use Docke
 
 ```bash
 # Build for ARM64
-pycontainer build --tag myapp:arm64 --platform linux/arm64
+pyoci build --tag myapp:arm64 --platform linux/arm64
 
 # Load into Docker
 docker load -i <(tar -C dist/image -cf - .)

@@ -1,10 +1,10 @@
 # GitHub Actions Integration
 
-This guide shows how to use pycontainer-build in GitHub Actions workflows to build and push container images without Docker.
+This guide shows how to use pyoci in GitHub Actions workflows to build and push container images without Docker.
 
 ## Reusable Workflow
 
-pycontainer-build provides a reusable GitHub Actions workflow that makes it easy to integrate container builds into your CI/CD pipeline.
+pyoci provides a reusable GitHub Actions workflow that makes it easy to integrate container builds into your CI/CD pipeline.
 
 ### Basic Usage
 
@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:${{ github.sha }}
       push: true
@@ -29,7 +29,7 @@ jobs:
 This will:
 1. Check out your code
 2. Set up Python 3.11
-3. Install pycontainer-build
+3. Install pyoci
 4. Build your container image
 5. Push to GitHub Container Registry (ghcr.io)
 
@@ -38,7 +38,7 @@ This will:
 ```yaml
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       # Python version for the build environment
       python-version: '3.11'
@@ -84,7 +84,7 @@ on:
 
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:${{ github.sha }}
       push: true
@@ -104,7 +104,7 @@ on:
 
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}
       base-image: 'python:3.11-slim'
@@ -130,7 +130,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       python-version: ${{ matrix.python-version }}
       tag: ghcr.io/${{ github.repository }}:py${{ matrix.python-version }}
@@ -151,7 +151,7 @@ on:
 
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:pr-${{ github.event.pull_request.number }}
       push: false  # Just build, don't push
@@ -161,7 +161,7 @@ jobs:
 
 ## Custom Workflow (Direct Usage)
 
-If you need more control, you can use pycontainer-build directly:
+If you need more control, you can use pyoci directly:
 
 ```yaml
 name: Custom Build
@@ -184,14 +184,14 @@ jobs:
         with:
           python-version: '3.11'
       
-      - name: Install pycontainer-build
-        run: pip install pycontainer-build
+      - name: Install pyoci
+        run: pip install pyoci
       
       - name: Build and push container
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pycontainer build \
+          pyoci build \
             --tag ghcr.io/${{ github.repository }}:${{ github.sha }} \
             --base-image python:3.11-slim \
             --include-deps \
@@ -220,7 +220,7 @@ For Docker Hub, Azure Container Registry, or private registries:
 ```yaml
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: 'myregistry.azurecr.io/myapp:latest'
       registry: 'myregistry.azurecr.io'

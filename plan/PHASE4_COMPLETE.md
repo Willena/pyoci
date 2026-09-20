@@ -4,12 +4,12 @@
 January 2025
 
 ## Overview
-Phase 4 enhances pycontainer-build with production-ready features including framework auto-detection, SBOM generation, reproducible builds, configuration file support, and comprehensive logging. All milestones completed and tested.
+Phase 4 enhances pyoci with production-ready features including framework auto-detection, SBOM generation, reproducible builds, configuration file support, and comprehensive logging. All milestones completed and tested.
 
 ## Completed Milestones
 
 ### 1. Framework Auto-Detection ✅
-**File**: `src/pycontainer/framework.py`
+**File**: `src/pyoci/framework.py`
 
 **Features**:
 - Detects FastAPI, Flask, and Django automatically
@@ -27,11 +27,11 @@ def detect_framework(project_dir):
 ```bash
 # FastAPI project automatically gets:
 # CMD = ["fastapi", "run", "main.py", "--port", "8000"]
-pycontainer build --context ./my-fastapi-app
+pyoci build --context ./my-fastapi-app
 ```
 
 ### 2. SBOM Generation ✅
-**File**: `src/pycontainer/sbom.py`
+**File**: `src/pyoci/sbom.py`
 
 **Features**:
 - Generates Software Bill of Materials for security compliance
@@ -41,23 +41,23 @@ pycontainer build --context ./my-fastapi-app
 **CLI Usage**:
 ```bash
 # Generate SPDX SBOM
-pycontainer build --sbom spdx --tag myapp:latest
+pyoci build --sbom spdx --tag myapp:latest
 
 # Generate CycloneDX SBOM
-pycontainer build --sbom cyclonedx --tag myapp:latest
+pyoci build --sbom cyclonedx --tag myapp:latest
 ```
 
 **Output**: `dist/image/sbom.{spdx,cyclonedx}.json`
 
 ### 3. Configuration File Support ✅
-**File**: `src/pycontainer/config_loader.py`
+**File**: `src/pyoci/config_loader.py`
 
 **Features**:
-- Load settings from `pycontainer.toml` files
+- Load settings from `pyoci.toml` files
 - CLI flags override file-based configuration
 - Supports all BuildConfig fields
 
-**Example `pycontainer.toml`**:
+**Example `pyoci.toml`**:
 ```toml
 [build]
 base_image = "python:3.11-slim"
@@ -70,11 +70,11 @@ reproducible = true
 
 **CLI**:
 ```bash
-pycontainer build --config pycontainer.toml --tag prod:latest
+pyoci build --config pyoci.toml --tag prod:latest
 ```
 
 ### 4. Reproducible Builds ✅
-**Updated**: `src/pycontainer/builder.py`
+**Updated**: `src/pyoci/builder.py`
 
 **Features**:
 - Deterministic tar archive creation (sorted files, fixed timestamps)
@@ -89,13 +89,13 @@ pycontainer build --config pycontainer.toml --tag prod:latest
 **Verification**:
 ```bash
 # Build twice, compare digests
-pycontainer build --tag test:1
-pycontainer build --tag test:2
+pyoci build --tag test:1
+pyoci build --tag test:2
 # Layer digests will be identical
 ```
 
 ### 5. Multi-Architecture Configuration ✅
-**Updated**: `src/pycontainer/config.py`, `src/pycontainer/cli.py`
+**Updated**: `src/pyoci/config.py`, `src/pyoci/cli.py`
 
 **Features**:
 - Configurable target platform (os/architecture)
@@ -105,13 +105,13 @@ pycontainer build --tag test:2
 **CLI**:
 ```bash
 # Default: linux/amd64
-pycontainer build --platform linux/arm64 --tag myapp:arm64
+pyoci build --platform linux/arm64 --tag myapp:arm64
 ```
 
 **Note**: Currently sets platform metadata only; actual cross-compilation not implemented.
 
 ### 6. Verbose Logging & Dry-Run ✅
-**Updated**: `src/pycontainer/builder.py`, `src/pycontainer/cli.py`
+**Updated**: `src/pyoci/builder.py`, `src/pyoci/cli.py`
 
 **Features**:
 - `--verbose/-v`: Detailed build progress logs
@@ -132,7 +132,7 @@ pycontainer build --platform linux/arm64 --tag myapp:arm64
 
 **Dry-Run Example**:
 ```bash
-pycontainer build --dry-run --tag test:latest
+pyoci build --dry-run --tag test:latest
 # Shows file list, layer composition, config without writing files
 ```
 
@@ -202,7 +202,7 @@ New flags in `cli.py`:
 ## Documentation
 
 ### Configuration Files
-Created comprehensive TOML schema for `pycontainer.toml` with examples in `config_loader.py` docstrings.
+Created comprehensive TOML schema for `pyoci.toml` with examples in `config_loader.py` docstrings.
 
 ### SBOM Standards
 Implemented compliance with:
@@ -232,7 +232,7 @@ Implemented compliance with:
 When Phase 3 (Toolchain Integrations) is implemented:
 - GitHub Actions workflows will use `--sbom` for security scanning
 - Poetry integration will leverage `--config` for reproducible builds
-- Pre-commit hooks will validate `pycontainer.toml` syntax
+- Pre-commit hooks will validate `pyoci.toml` syntax
 
 ### Advanced Features
 - Multi-stage builds (separate build/runtime layers)
@@ -244,8 +244,8 @@ When Phase 3 (Toolchain Integrations) is implemented:
 
 ### Complete Production Build
 ```bash
-pycontainer build \
-  --config pycontainer.toml \
+pyoci build \
+  --config pyoci.toml \
   --tag mycompany/api:1.2.3 \
   --sbom spdx \
   --verbose
@@ -254,16 +254,16 @@ pycontainer build \
 ### Development Workflow
 ```bash
 # Quick local test
-pycontainer build --tag dev:latest --dry-run
+pyoci build --tag dev:latest --dry-run
 
 # Full build with logs
-pycontainer build --tag dev:latest -v
+pyoci build --tag dev:latest -v
 ```
 
 ### Security Compliance
 ```bash
 # Generate SBOM for vulnerability scanning
-pycontainer build \
+pyoci build \
   --tag secure:latest \
   --sbom cyclonedx \
   --reproducible
@@ -271,7 +271,7 @@ pycontainer build \
 
 ## Conclusion
 
-Phase 4 successfully transforms pycontainer-build from an experimental prototype into a production-ready tool with industry-standard features:
+Phase 4 successfully transforms pyoci from an experimental prototype into a production-ready tool with industry-standard features:
 - ✅ Developer-friendly (auto-detection, verbose logs)
 - ✅ Security-focused (SBOM generation)
 - ✅ Reproducible (deterministic builds)

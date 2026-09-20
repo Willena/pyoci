@@ -1,8 +1,8 @@
-# Implementation Plan: pycontainer-build
+# Implementation Plan: pyoci
 
 ## Overview
 
-This document outlines the detailed implementation roadmap for transforming pycontainer-build from a foundational OCI image generator into a production-ready, Docker-free container build system for Python.
+This document outlines the detailed implementation roadmap for transforming pyoci from a foundational OCI image generator into a production-ready, Docker-free container build system for Python.
 
 ---
 
@@ -11,7 +11,7 @@ This document outlines the detailed implementation roadmap for transforming pyco
 ### Achievements
 
 - ✅ Core OCI image structure (manifest, config, layers)
-- ✅ Basic CLI (`pycontainer build`)
+- ✅ Basic CLI (`pyoci build`)
 - ✅ Python project introspection (pyproject.toml parsing)
 - ✅ Auto-detection of entry points and include paths
 - ✅ File packing into tar layers
@@ -21,7 +21,7 @@ This document outlines the detailed implementation roadmap for transforming pyco
 ### Architecture
 
 ```
-src/pycontainer/
+src/pyoci/
 ├── __init__.py           # Package root
 ├── cli.py                # Entry point (argparse-based)
 ├── builder.py            # Orchestration (ImageBuilder class)
@@ -106,7 +106,7 @@ dist/image/
 
 **Files Created**:
 
-- ✅ `src/pycontainer/registry_client.py` - Registry v2 API client with urllib
+- ✅ `src/pyoci/registry_client.py` - Registry v2 API client with urllib
 - ✅ `tests/test_registry_client.py` - Unit tests for client
 - ✅ `tests/test_build_push.py` - Integration tests
 
@@ -152,7 +152,7 @@ dist/image/
 
 **Files Created**:
 
-- ✅ `src/pycontainer/auth.py` - Auth provider system with multiple backends
+- ✅ `src/pyoci/auth.py` - Auth provider system with multiple backends
 - ✅ `tests/test_auth.py` - Comprehensive auth tests
 
 **Files Modified**:
@@ -180,7 +180,7 @@ dist/image/
 
 **Tasks**:
 
-- [x] Implement local blob cache (`~/.pycontainer/cache/blobs/`)
+- [x] Implement local blob cache (`~/.pyoci/cache/blobs/`)
 - [x] Check blob existence before upload (`HEAD /v2/<name>/blobs/<digest>`)
 - [x] Skip upload if blob exists in registry
 - [x] Implement cache eviction policy (LRU, max size)
@@ -191,7 +191,7 @@ dist/image/
 
 - Cache structure mirrors OCI layout:
   ```
-  ~/.pycontainer/cache/
+  ~/.pyoci/cache/
   └── blobs/sha256/
       └── <digest>
   ```
@@ -201,7 +201,7 @@ dist/image/
 
 **Files Created**:
 
-- ✅ `src/pycontainer/cache.py` - LayerCache class with LRU eviction
+- ✅ `src/pyoci/cache.py` - LayerCache class with LRU eviction
 - ✅ `tests/test_cache.py` - Comprehensive cache tests (5/5 passing)
 
 **Files Modified**:
@@ -458,16 +458,16 @@ BuildConfig(
 
 **Tasks**:
 
-- [x] Create `poetry-pycontainer` package
+- [x] Create `poetry-oci` package
 - [x] Implement `poetry build-container` command
-- [x] Read config from `[tool.pycontainer]` in `pyproject.toml`
+- [x] Read config from `[tool.pyoci]` in `pyproject.toml`
 - [x] Auto-detect Poetry metadata for labels
 - ⏸️ Publish to PyPI (ready for publication)
 
 **Configuration Example**:
 
 ```toml
-[tool.pycontainer]
+[tool.pyoci]
 tag = "myapp:latest"
 base_image = "python:3.11-slim"
 registry = "ghcr.io/user/myapp"
@@ -475,13 +475,13 @@ registry = "ghcr.io/user/myapp"
 
 **Files Created**:
 
-- ✅ `plugins/poetry-pycontainer/` - Complete plugin package
+- ✅ `plugins/poetry-oci/` - Complete plugin package
 
 **Acceptance Criteria**:
 
 - ✅ `poetry build-container` produces OCI image
 - ✅ Configuration reading from pyproject.toml
-- ⏸️ Published as `poetry-pycontainer` on PyPI (ready)
+- ⏸️ Published as `poetry-oci` on PyPI (ready)
 
 ---
 
@@ -493,22 +493,22 @@ registry = "ghcr.io/user/myapp"
 
 **Tasks**:
 
-- [x] Create Hatch plugin (`hatch-pycontainer`)
+- [x] Create Hatch plugin (`hatch-oci`)
 - [x] Implement build hook for `hatch build`
-- [x] Read config from `[tool.hatch.build.hooks.pycontainer]`
+- [x] Read config from `[tool.hatch.build.hooks.pyoci]`
 - ⏸️ Publish to PyPI (ready for publication)
 
 **Configuration Example**:
 
 ```toml
-[tool.hatch.build.hooks.pycontainer]
+[tool.hatch.build.hooks.pyoci]
 tag = "myapp:latest"
 base-image = "python:3.11-slim"
 ```
 
 **Files Created**:
 
-- ✅ `plugins/hatch-pycontainer/` - Complete plugin package
+- ✅ `plugins/hatch-oci/` - Complete plugin package
 
 **Acceptance Criteria**:
 
@@ -542,7 +542,7 @@ services:
     host: containerapp
     hooks:
       build:
-        run: pycontainer build --tag ${SERVICE_IMAGE_NAME} --push
+        run: pyoci build --tag ${SERVICE_IMAGE_NAME} --push
 ```
 
 **Files Created**:
@@ -566,7 +566,7 @@ services:
 
 **Tasks**:
 
-- [x] Create reusable workflow `.github/workflows/pycontainer-build.yml`
+- [x] Create reusable workflow `.github/workflows/pyoci.yml`
 - [x] Support matrix builds (multiple Python versions)
 - [x] Push to GHCR with proper tagging
 - [x] Add example to repo documentation
@@ -578,7 +578,7 @@ name: Build Container
 on: [push]
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:${{ github.sha }}
       push: true
@@ -586,7 +586,7 @@ jobs:
 
 **Files Created**:
 
-- ✅ `.github/workflows/pycontainer-build.yml` - Reusable workflow
+- ✅ `.github/workflows/pyoci.yml` - Reusable workflow
 - ✅ `.github/workflows/example-build.yml.example` - Complete examples
 - ✅ `docs/github-actions.md` - Comprehensive documentation (7KB+)
 
@@ -650,7 +650,7 @@ jobs:
 
 **Files Created**:
 
-- ✅ `src/pycontainer/framework.py`
+- ✅ `src/pyoci/framework.py`
 
 **Files Modified**:
 
@@ -672,12 +672,12 @@ jobs:
 
 **Tasks**:
 
-- [x] Define `pycontainer.toml` schema (TOML format)
+- [x] Define `pyoci.toml` schema (TOML format)
 - [x] Implement validation with Pydantic or dataclasses
 - [x] Support loading config from file or CLI args (CLI overrides file)
 - [x] Add `--config` flag to specify custom config file
 
-**Example `pycontainer.toml`**:
+**Example `pyoci.toml`**:
 
 ```toml
 [build]
@@ -699,7 +699,7 @@ auth = "github-token"
 
 **Files Created**:
 
-- ✅ `src/pycontainer/config_loader.py`
+- ✅ `src/pyoci/config_loader.py`
 
 **Files Modified**:
 
@@ -738,7 +738,7 @@ auth = "github-token"
 
 **Files Created**:
 
-- ✅ `src/pycontainer/sbom.py`
+- ✅ `src/pyoci/sbom.py`
 
 **Files Modified**:
 
@@ -963,7 +963,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
       - run: pip install -e .[dev]
-      - run: pytest tests/unit/ --cov=pycontainer
+      - run: pytest tests/unit/ --cov=pyoci
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -1105,8 +1105,8 @@ jobs:
 
 ```bash
 # Clone and setup
-git clone https://github.com/microsoft/pycontainer-build.git
-cd pycontainer-build
+git clone https://github.com/microsoft/pyoci.git
+cd pyoci
 pip install -e .[dev]
 
 # Make changes
@@ -1124,9 +1124,9 @@ mypy src/
 
 ## Contact & Feedback
 
-- **GitHub Issues**: [pycontainer-build/issues](https://github.com/microsoft/pycontainer-build/issues)
-- **Discussions**: [pycontainer-build/discussions](https://github.com/microsoft/pycontainer-build/discussions)
-- **Email**: pycontainer-team@microsoft.com (placeholder)
+- **GitHub Issues**: [pyoci/issues](https://github.com/microsoft/pyoci/issues)
+- **Discussions**: [pyoci/discussions](https://github.com/microsoft/pyoci/discussions)
+- **Email**: pyoci-team@microsoft.com (placeholder)
 
 ---
 

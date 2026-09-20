@@ -2,16 +2,16 @@
 
 from fastapi import FastAPI
 
-app = FastAPI(title="pycontainer-build Demo", version="1.0.0")
+app = FastAPI(title="pyoci Demo", version="1.0.0")
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "message": "Hello from pycontainer-build!",
+        "message": "Hello from pyoci!",
         "framework": "FastAPI",
-        "builder": "pycontainer-build"
+        "builder": "pyoci"
     }
 
 
@@ -27,7 +27,7 @@ async def info():
     return {
         "name": "fastapi-demo",
         "version": "1.0.0",
-        "description": "Demo app showing pycontainer-build integrations",
+        "description": "Demo app showing pyoci integrations",
         "integrations": [
             "Poetry plugin",
             "Hatch plugin",

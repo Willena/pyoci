@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 2 has been successfully implemented, enabling pycontainer-build to layer Python applications on top of base images (e.g., `python:3.11-slim`) and package dependencies efficiently.
+Phase 2 has been successfully implemented, enabling pyoci to layer Python applications on top of base images (e.g., `python:3.11-slim`) and package dependencies efficiently.
 
 ## Implemented Features
 
@@ -14,7 +14,7 @@ Phase 2 has been successfully implemented, enabling pycontainer-build to layer P
 
 **Usage:**
 ```bash
-pycontainer build --base-image python:3.11-slim --tag myapp:v1
+pyoci build --base-image python:3.11-slim --tag myapp:v1
 ```
 
 ### 2.2: Layer Merging & Multi-Layer Images ✅
@@ -28,7 +28,7 @@ pycontainer build --base-image python:3.11-slim --tag myapp:v1
 
 **Example:**
 ```python
-from pycontainer import BuildConfig, ImageBuilder
+from pyoci import BuildConfig, ImageBuilder
 
 config = BuildConfig(
     tag="myapp:v1",
@@ -48,7 +48,7 @@ builder.build()
 
 **Usage:**
 ```bash
-pycontainer build --include-deps --requirements requirements.txt --tag myapp:v1
+pyoci build --include-deps --requirements requirements.txt --tag myapp:v1
 ```
 
 ### 2.4: Distroless & Slim Base Image Support ✅
@@ -84,12 +84,12 @@ class BuildConfig:
 ## Architecture Changes
 
 ### Modified Files
-- `src/pycontainer/registry_client.py`: Added pull methods
-- `src/pycontainer/oci.py`: Enhanced config merging with `build_config_json()`
-- `src/pycontainer/builder.py`: Added `_pull_base_image()` and `_create_deps_layer()`
-- `src/pycontainer/project.py`: Added `find_dependencies()` function
-- `src/pycontainer/config.py`: Extended `BuildConfig` with Phase 2 fields
-- `src/pycontainer/cli.py`: Added Phase 2 CLI arguments
+- `src/pyoci/registry_client.py`: Added pull methods
+- `src/pyoci/oci.py`: Enhanced config merging with `build_config_json()`
+- `src/pyoci/builder.py`: Added `_pull_base_image()` and `_create_deps_layer()`
+- `src/pyoci/project.py`: Added `find_dependencies()` function
+- `src/pyoci/config.py`: Extended `BuildConfig` with Phase 2 fields
+- `src/pyoci/cli.py`: Added Phase 2 CLI arguments
 
 ### New Functions
 - `RegistryClient.pull_manifest()`: Fetch manifest from registry
@@ -115,14 +115,14 @@ pytest tests/test_base_image.py -v
 
 ### Integration Test
 ```bash
-pycontainer build --base-image python:3.11-slim --context test_app --tag test:phase2
+pyoci build --base-image python:3.11-slim --context test_app --tag test:phase2
 ```
 
 ## Example Builds
 
 ### Simple App with Base Image
 ```bash
-pycontainer build \
+pyoci build \
   --base-image python:3.11-slim \
   --tag myapp:v1 \
   --context ./myapp
@@ -130,7 +130,7 @@ pycontainer build \
 
 ### App with Dependencies
 ```bash
-pycontainer build \
+pyoci build \
   --base-image python:3.11-slim \
   --include-deps \
   --tag myapp:v1 \
@@ -139,7 +139,7 @@ pycontainer build \
 
 ### Distroless Build
 ```bash
-pycontainer build \
+pyoci build \
   --base-image gcr.io/distroless/python3 \
   --tag myapp:v1 \
   --context ./myapp

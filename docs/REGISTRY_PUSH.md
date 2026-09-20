@@ -1,10 +1,10 @@
 # Registry Push Examples
 
-This document shows how to use pycontainer-build to push images to various container registries.
+This document shows how to use pyoci to push images to various container registries.
 
 ## Prerequisites
 
-- pycontainer-build installed: `pip install -e .`
+- pyoci installed: `pip install -e .`
 - Authentication tokens for your target registry
 
 ## GitHub Container Registry (GHCR)
@@ -24,7 +24,7 @@ Generate a token with `write:packages` scope.
 export GITHUB_TOKEN="ghp_your_token_here"
 
 # Build and push - no auth flags needed!
-pycontainer build \
+pyoci build \
   --tag ghcr.io/your-username/myapp:v1.0.0 \
   --push
 ```
@@ -33,7 +33,7 @@ pycontainer build \
 
 ```bash
 # Pass credentials directly
-pycontainer build \
+pyoci build \
   --tag ghcr.io/your-username/myapp:v1.0.0 \
   --password "ghp_your_token_here" \
   --push
@@ -45,8 +45,8 @@ pycontainer build \
 # Login with docker first
 echo "ghp_your_token_here" | docker login ghcr.io -u YOUR_USERNAME --password-stdin
 
-# pycontainer will automatically read ~/.docker/config.json
-pycontainer build --tag ghcr.io/your-username/myapp:v1.0.0 --push
+# pyoci will automatically read ~/.docker/config.json
+pyoci build --tag ghcr.io/your-username/myapp:v1.0.0 --push
 ```
 
 ## Docker Hub
@@ -57,8 +57,8 @@ pycontainer build --tag ghcr.io/your-username/myapp:v1.0.0 --push
 # Login with docker (credentials saved to ~/.docker/config.json)
 docker login
 
-# pycontainer automatically reads the credentials
-pycontainer build --tag your-username/myapp:latest --push
+# pyoci automatically reads the credentials
+pyoci build --tag your-username/myapp:latest --push
 ```
 
 ### Environment Variables
@@ -67,7 +67,7 @@ pycontainer build --tag your-username/myapp:latest --push
 export REGISTRY_USERNAME="your_dockerhub_username"
 export REGISTRY_PASSWORD="your_dockerhub_token"
 
-pycontainer build \
+pyoci build \
   --tag docker.io/your-username/myapp:latest \
   --push
 ```
@@ -75,7 +75,7 @@ pycontainer build \
 ### Command Line Flags
 
 ```bash
-pycontainer build \
+pyoci build \
   --tag your-username/myapp:latest \
   --username your_dockerhub_username \
   --password your_dockerhub_token \
@@ -90,8 +90,8 @@ pycontainer build \
 # Login to Azure
 az login
 
-# pycontainer automatically gets tokens via 'az acr login --expose-token'
-pycontainer build \
+# pyoci automatically gets tokens via 'az acr login --expose-token'
+pyoci build \
   --tag myregistry.azurecr.io/myapp:v1 \
   --push
 ```
@@ -102,7 +102,7 @@ pycontainer build \
 export REGISTRY_USERNAME="your_service_principal_id"
 export REGISTRY_PASSWORD="your_service_principal_password"
 
-pycontainer build \
+pyoci build \
   --tag myregistry.azurecr.io/myapp:v1 \
   --push
 ```
@@ -111,7 +111,7 @@ pycontainer build \
 
 ```bash
 # Get admin password from Azure portal or CLI
-pycontainer build \
+pyoci build \
   --tag myregistry.azurecr.io/myapp:v1 \
   --username myregistry \
   --password "admin_password_from_portal" \
@@ -130,7 +130,7 @@ docker run -d -p 5000:5000 --name registry registry:2
 
 ```bash
 # No authentication needed for local registry
-pycontainer build \
+pyoci build \
   --tag localhost:5000/myapp:test \
   --push
 ```
@@ -148,8 +148,8 @@ curl http://localhost:5000/v2/myapp/tags/list
 ## Programmatic Usage
 
 ```python
-from pycontainer.builder import ImageBuilder
-from pycontainer.config import BuildConfig
+from pyoci.builder import ImageBuilder
+from pyoci.config import BuildConfig
 import os
 
 # Configure build
@@ -170,7 +170,7 @@ builder.push(auth_token=auth_token, show_progress=True)
 
 ## Progress Output
 
-When pushing, pycontainer shows progress:
+When pushing, pyoci shows progress:
 
 ```
 Pushing to ghcr.io/user/myapp:v1
@@ -183,7 +183,7 @@ Pushing to ghcr.io/user/myapp:v1
 Use `--no-progress` to suppress:
 
 ```bash
-pycontainer build --tag myapp:v1 --push --no-progress
+pyoci build --tag myapp:v1 --push --no-progress
 ```
 
 ## Troubleshooting
@@ -204,7 +204,7 @@ If you see connection timeouts:
 
 ### Blob Already Exists
 
-This is normal! pycontainer checks if blobs exist before uploading:
+This is normal! pyoci checks if blobs exist before uploading:
 ```
   Pushing layer 1/1 (sha256:787962fa701...)
     Layer exists, skipped
@@ -214,7 +214,7 @@ This makes subsequent pushes much faster.
 
 ## Authentication Priority
 
-pycontainer tries authentication methods in this order:
+pyoci tries authentication methods in this order:
 
 1. **Command line flags** (`--username`, `--password`)
 2. **Environment variables** (`GITHUB_TOKEN`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`)

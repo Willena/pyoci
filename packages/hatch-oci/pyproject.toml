@@ -1,0 +1,46 @@
+[project]
+name = "hatch-oci"
+version = "0.1.0"
+description = "Hatch plugin for building OCI container images with pyoci"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "pyoci contributors" }
+]
+keywords = ["hatch", "plugin", "container", "oci", "docker"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Hatch",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Build Tools",
+]
+
+dependencies = [
+    "hatchling>=1.18.0",
+    "pyoci"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/willena/pyoci"
+Repository = "https://github.com/willena/pyoci"
+Issues = "https://github.com/willena/pyoci/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hatch_oci"]
+
+[project.entry-points.hatch]
+pyoci = "hatch_oci.hooks"

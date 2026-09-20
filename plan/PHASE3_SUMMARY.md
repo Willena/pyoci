@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Phase 3 successfully delivers a complete toolchain integration suite for pycontainer-build, transforming it from a standalone CLI tool into a comprehensive ecosystem with native support for Poetry, Hatch, GitHub Actions, and Azure Developer CLI.
+Phase 3 successfully delivers a complete toolchain integration suite for pyoci, transforming it from a standalone CLI tool into a comprehensive ecosystem with native support for Poetry, Hatch, GitHub Actions, and Azure Developer CLI.
 
 ### Key Achievements
 
@@ -23,7 +23,7 @@ Phase 3 successfully delivers a complete toolchain integration suite for pyconta
 
 ## Deliverables
 
-### 1. Poetry Plugin (`plugins/poetry-pycontainer/`)
+### 1. Poetry Plugin (`plugins/poetry-oci/`)
 
 **Status**: ✅ Complete  
 **Lines of Code**: ~200 (Python)  
@@ -31,20 +31,20 @@ Phase 3 successfully delivers a complete toolchain integration suite for pyconta
 
 **Features**:
 - Custom command: `poetry build-container`
-- Configuration via `[tool.pycontainer]` in pyproject.toml
+- Configuration via `[tool.pyoci]` in pyproject.toml
 - Automatic Poetry metadata integration
-- All pycontainer-build features supported
+- All pyoci features supported
 - CLI flags for runtime overrides
 
 **Usage**:
 ```bash
-poetry self add poetry-pycontainer
+poetry self add poetry-oci
 poetry build-container --tag myapp:latest --push
 ```
 
 ---
 
-### 2. Hatch Plugin (`plugins/hatch-pycontainer/`)
+### 2. Hatch Plugin (`plugins/hatch-oci/`)
 
 **Status**: ✅ Complete  
 **Lines of Code**: ~150 (Python)  
@@ -53,13 +53,13 @@ poetry build-container --tag myapp:latest --push
 **Features**:
 - Build hook integration
 - Automatic execution during `hatch build`
-- Configuration via `[tool.hatch.build.hooks.pycontainer]`
+- Configuration via `[tool.hatch.build.hooks.pyoci]`
 - Environment-specific builds
 - Skip functionality
 
 **Usage**:
 ```bash
-pip install hatch-pycontainer
+pip install hatch-oci
 hatch build  # Builds both wheel and container
 ```
 
@@ -82,12 +82,12 @@ hatch build  # Builds both wheel and container
 # azure.yaml
 hooks:
   build:
-    run: pycontainer build --tag ${SERVICE_IMAGE_NAME} --push
+    run: pyoci build --tag ${SERVICE_IMAGE_NAME} --push
 ```
 
 ---
 
-### 4. GitHub Actions Workflow (`.github/workflows/pycontainer-build.yml`)
+### 4. GitHub Actions Workflow (`.github/workflows/pyoci.yml`)
 
 **Status**: ✅ Complete  
 **Lines of Code**: ~100 (YAML)  
@@ -105,7 +105,7 @@ hooks:
 ```yaml
 jobs:
   build:
-    uses: spboyer/pycontainer-build/.github/workflows/pycontainer-build.yml@main
+    uses: willena/pyoci/.github/workflows/pyoci.yml@main
     with:
       tag: ghcr.io/${{ github.repository }}:latest
       push: true
@@ -149,13 +149,13 @@ jobs:
    - Environment-specific builds
    - Complete working examples
 
-3. **Poetry Plugin** (`plugins/poetry-pycontainer/README.md`) - 7KB
+3. **Poetry Plugin** (`plugins/poetry-oci/README.md`) - 7KB
    - Installation instructions
    - Configuration reference
    - CI/CD integration examples
    - Advanced usage patterns
 
-4. **Hatch Plugin** (`plugins/hatch-pycontainer/README.md`) - 7KB
+4. **Hatch Plugin** (`plugins/hatch-oci/README.md`) - 7KB
    - Build hook configuration
    - Environment-based builds
    - Comparison with other tools
@@ -224,25 +224,25 @@ jobs:
 ## File Structure
 
 ```
-pycontainer-build/
+pyoci/
 ├── .github/workflows/
-│   ├── pycontainer-build.yml         # Reusable workflow (100 lines)
+│   ├── pyoci.yml         # Reusable workflow (100 lines)
 │   └── example-build.yml.example     # Examples (60 lines)
 ├── docs/
 │   ├── github-actions.md            # 7KB guide
 │   └── azd-integration.md           # 10KB guide
 ├── plugins/
 │   ├── README.md                     # 5KB overview
-│   ├── poetry-pycontainer/          # Poetry plugin
+│   ├── poetry-oci/          # Poetry plugin
 │   │   ├── pyproject.toml
 │   │   ├── README.md (7KB)
-│   │   └── src/poetry_pycontainer/
+│   │   └── src/poetry_oci/
 │   │       ├── __init__.py
 │   │       └── plugin.py (150 lines)
-│   ├── hatch-pycontainer/           # Hatch plugin
+│   ├── hatch-oci/           # Hatch plugin
 │   │   ├── pyproject.toml
 │   │   ├── README.md (7KB)
-│   │   └── src/hatch_pycontainer/
+│   │   └── src/hatch_oci/
 │   │       ├── __init__.py
 │   │       └── hooks.py (120 lines)
 ├── examples/
@@ -365,8 +365,8 @@ Breakdown by Type:
 ### Immediate (Post-Merge)
 
 1. **Publishing**
-   - [ ] Publish poetry-pycontainer to PyPI
-   - [ ] Publish hatch-pycontainer to PyPI
+   - [ ] Publish poetry-oci to PyPI
+   - [ ] Publish hatch-oci to PyPI
 
 2. **Testing**
    - [ ] Add unit tests for plugins
@@ -433,9 +433,9 @@ Breakdown by Type:
 
 ## Conclusion
 
-Phase 3 successfully delivers a complete toolchain integration suite that transforms pycontainer-build from a CLI tool into a comprehensive ecosystem. All four milestones are complete with production-ready implementations and 35KB+ of documentation.
+Phase 3 successfully delivers a complete toolchain integration suite that transforms pyoci from a CLI tool into a comprehensive ecosystem. All four milestones are complete with production-ready implementations and 35KB+ of documentation.
 
-The integrations enable developers to use pycontainer-build seamlessly within their existing workflows, whether they prefer Poetry, Hatch, GitHub Actions, or Azure Developer CLI.
+The integrations enable developers to use pyoci seamlessly within their existing workflows, whether they prefer Poetry, Hatch, GitHub Actions, or Azure Developer CLI.
 
 **Status**: ✅ **PHASE 3 COMPLETE**  
 **Quality**: ✅ **PRODUCTION-READY**  
