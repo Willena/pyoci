@@ -32,7 +32,6 @@ async def info():
             "Poetry plugin",
             "Hatch plugin",
             "GitHub Actions",
-            "Azure Developer CLI",
-            "VS Code Extension"
+            "Azure Developer CLI"
         ]
     }

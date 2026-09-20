@@ -598,42 +598,6 @@ jobs:
 
 ---
 
-#### 3.5: VS Code Extension
-
-**Status**: ✅ **COMPLETE**  
-**Est. Effort**: 3-4 days  
-**Priority**: Medium
-
-**Tasks**:
-
-- [x] Create VS Code extension (`vscode-pycontainer`)
-- [x] Add "Build Container" command to command palette
-- [x] Show build output in terminal
-- [x] Configuration wizard for pycontainer.toml
-- ⏸️ Publish to VS Code marketplace (ready for publication)
-
-**Extension Features**:
-
-- Command palette commands
-- Context menu integration
-- Real-time output channel
-- Auto-install pycontainer-build
-
-**Files Created**:
-
-- ✅ `plugins/vscode-pycontainer/` - Complete extension package
-- ✅ `plugins/vscode-pycontainer/src/extension.ts` - TypeScript implementation (7.7KB)
-- ✅ `plugins/vscode-pycontainer/README.md` - User documentation (5KB+)
-
-**Acceptance Criteria**:
-
-- ✅ Extension commands implemented
-- ✅ Build output shown in terminal
-- ✅ Configuration wizard working
-- ⏸️ Published to VS Code marketplace (ready)
-
----
-
 ### Phase 3 Testing Requirements
 
 #### Integration Tests
@@ -642,7 +606,6 @@ jobs:
 - ✅ Hatch plugin manually validated with sample projects
 - ✅ azd integration patterns validated with documentation
 - ✅ GitHub Actions workflow syntax validated
-- ✅ VS Code extension commands tested
 
 #### CI/CD Tests
 

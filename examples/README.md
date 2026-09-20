@@ -11,7 +11,6 @@ A complete FastAPI web application showcasing all integration methods:
 - ✅ Direct CLI usage
 - ✅ Poetry plugin integration
 - ✅ Hatch plugin integration  
-- ✅ VS Code extension
 - ✅ GitHub Actions workflow
 - ✅ Azure Developer CLI deployment
 
@@ -58,9 +57,6 @@ poetry build-container --tag fastapi-demo:latest
 # Or with Hatch
 pip install hatch hatch-pycontainer
 hatch build
-
-# Or with VS Code
-# Open in VS Code → Cmd+Shift+P → "Build Container Image"
 ```
 
 ## Example Structure
@@ -80,7 +76,6 @@ Each example includes:
 | **CLI** | `pycontainer build` | Command-line flags | Quick builds, CI/CD |
 | **Poetry** | `poetry build-container` | `[tool.pycontainer]` | Poetry projects |
 | **Hatch** | `hatch build` | `[tool.hatch.build.hooks]` | Hatch projects |
-| **VS Code** | Command Palette | Settings UI | IDE users |
 | **GitHub Actions** | Workflow file | YAML inputs | Automation |
 | **azd** | `azd up` | azure.yaml hooks | Azure deployment |
 

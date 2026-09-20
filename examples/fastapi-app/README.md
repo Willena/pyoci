@@ -32,13 +32,6 @@ pip install hatch hatch-pycontainer
 hatch build  # Builds both wheel and container
 ```
 
-### Build with VS Code
-
-1. Open this directory in VS Code
-2. Open Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
-3. Type "pycontainer: Build Container Image"
-4. Enter tag: `fastapi-demo:latest`
-
 ### Deploy with Azure Developer CLI
 
 Create `azure.yaml`:
@@ -134,7 +127,7 @@ This example includes configuration for all integrations:
 - ✅ **Dependency packaging** - Include pip packages with `--include-deps`
 - ✅ **Environment variable configuration** - Custom env vars for production
 - ✅ **OCI label metadata** - Maintainer, description, and custom labels
-- ✅ **Multiple integration methods** - CLI, Poetry, Hatch, VS Code, GitHub Actions, azd
+- ✅ **Multiple integration methods** - CLI, Poetry, Hatch, GitHub Actions, azd
 
 ## Learn More
 
@@ -142,4 +135,3 @@ This example includes configuration for all integrations:
 - [Hatch Plugin Documentation](../../plugins/hatch-pycontainer/)
 - [GitHub Actions Documentation](../../docs/github-actions.md)
 - [Azure Developer CLI Documentation](../../docs/azd-integration.md)
-- [VS Code Extension Documentation](../../plugins/vscode-pycontainer/)

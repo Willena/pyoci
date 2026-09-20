@@ -168,7 +168,6 @@ Content-addressable caching with LRU eviction. Only rebuild layers that changed.
 - **Hatch plugin**: `hatch build`
 - **GitHub Actions**: Reusable workflow
 - **Azure Developer CLI**: Custom build hooks
-- **VS Code extension**: Build from command palette
 
 ### Use Cases
 
@@ -385,7 +384,7 @@ pycontainer build \
 - ✅ Base image support
 - ✅ Layer caching
 - ✅ SBOM generation
-- ✅ Toolchain integrations (Poetry, Hatch, GitHub Actions, VS Code)
+- ✅ Toolchain integrations (Poetry, Hatch, GitHub Actions, Azure Developer CLI)
 - ✅ Framework auto-detection
 
 **Coming Soon**:

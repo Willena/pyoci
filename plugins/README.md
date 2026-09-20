@@ -1,6 +1,7 @@
 # pycontainer-build Plugins
 
-This directory contains toolchain integrations for pycontainer-build, enabling seamless container image building across different Python development workflows.
+This directory contains toolchain integrations for pycontainer-build, enabling seamless container image building across
+different Python development workflows.
 
 ## Available Plugins
 
@@ -14,6 +15,7 @@ poetry build-container --tag myapp:latest --push
 ```
 
 **Features:**
+
 - Integrates with Poetry's build system
 - Reads configuration from `[tool.pycontainer]` in pyproject.toml
 - Automatically includes Poetry dependencies
@@ -29,36 +31,20 @@ hatch build  # Builds both wheel and container
 ```
 
 **Features:**
+
 - Hooks into Hatch's build process
 - Builds container alongside Python packages
 - Configurable via `[tool.hatch.build.hooks.pycontainer]`
 - Environment-specific builds (dev, prod)
 
-### [VS Code Extension](./vscode-pycontainer/)
-
-Build containers directly from VS Code with UI commands and configuration.
-
-```
-Install from VS Code Marketplace or:
-code --install-extension vscode-pycontainer-0.1.0.vsix
-```
-
-**Features:**
-- Command palette integration
-- Real-time build output
-- Configuration wizard
-- Auto-install pycontainer-build
-- Context menu actions
-
 ## Installation
 
-Each plugin is independently installable. Choose the one(s) that match your workflow:
+Each plugin is independently installable. Choose the one (s) that match your workflow:
 
-| Tool | Installation | Usage |
-|------|--------------|-------|
+| Tool   | Installation                         | Usage                    |
+|--------|--------------------------------------|--------------------------|
 | Poetry | `poetry self add poetry-pycontainer` | `poetry build-container` |
-| Hatch | `pip install hatch-pycontainer` | `hatch build` |
-| VS Code | Install from marketplace | Command palette |
+| Hatch  | `pip install hatch-pycontainer`      | `hatch build`            |
 
 ## Configuration
 
@@ -92,18 +78,6 @@ push = false
 ENV = "production"
 ```
 
-### VS Code (settings.json)
-
-```json
-{
-  "pycontainer.pythonPath": "python",
-  "pycontainer.defaultTag": "myapp:latest",
-  "pycontainer.defaultBaseImage": "python:3.11-slim",
-  "pycontainer.autoInstall": true,
-  "pycontainer.verbose": false
-}
-```
-
 ## Common Use Cases
 
 ### Local Development
@@ -114,9 +88,6 @@ poetry build-container --tag myapp:dev
 
 # Hatch
 hatch build
-
-# VS Code
-Cmd+Shift+P → "Build Container Image"
 ```
 
 ### CI/CD Pipeline
@@ -187,11 +158,6 @@ pytest
 cd plugins/hatch-pycontainer
 pip install -e .
 pytest
-
-# VS Code extension
-cd plugins/vscode-pycontainer
-npm install
-npm test
 ```
 
 ## Publishing
@@ -208,11 +174,6 @@ poetry publish
 cd plugins/hatch-pycontainer
 hatch build
 hatch publish
-
-# VS Code extension
-cd plugins/vscode-pycontainer
-vsce package
-vsce publish
 ```
 
 ## Roadmap

@@ -223,7 +223,6 @@ Perfect for integration with:
 - **Azure Developer CLI (azd)** — Custom build strategies ([docs](docs/azd-integration.md))
 - **GitHub Actions** — Automated CI/CD workflows ([docs](docs/github-actions.md))
 - **Poetry/Hatch** — Build plugins ([plugins](plugins/))
-- **VS Code** — Extension for container builds ([plugin](plugins/vscode-pycontainer/))
 - **AI agents** — Copilot, MCP servers, automated scaffolding
 
 ## 🔌 Integrations
@@ -271,14 +270,6 @@ hooks:
 ```
 
 [See full documentation →](docs/azd-integration.md)
-
-### VS Code Extension
-
-Install from VS Code Marketplace or command palette:
-- "Build Container Image"
-- "Build and Push Container Image"
-
-[See full documentation →](plugins/vscode-pycontainer/)
 
 ---
 
@@ -423,7 +414,6 @@ url = "ghcr.io/myorg/myapp"
 - [x] Hatch build hook
 - [x] Azure Developer CLI (azd) integration
 - [x] GitHub Actions reusable workflow
-- [x] VS Code extension
 
 ### ✅ **Phase 4: Polish & Production Readiness** (COMPLETE)
 

@@ -676,23 +676,6 @@ pip install --no-dev -r requirements.txt
 pycontainer build --tag myapp:latest --include-deps
 ```
 
----
-
-## 🔗 Integration with Local Tools
-
-### Using with VS Code
-
-```bash
-# 1. Install the VS Code extension
-code --install-extension ms-python.pycontainer
-
-# 2. Open your project in VS Code
-code /path/to/project
-
-# 3. Use Command Palette (Cmd+Shift+P):
-#    - "pycontainer: Build Container Image"
-#    - "pycontainer: Build and Push Container Image"
-```
 
 ### Using with Poetry
 
