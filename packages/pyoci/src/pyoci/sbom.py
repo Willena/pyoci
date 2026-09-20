@@ -74,7 +74,7 @@ def _generate_cyclonedx(context_dir: Path) -> Dict:
         "version": 1,
         "metadata": {
             "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "tools": [{"name": "pyoci", "version": "0.1.0"}],
+            "tools": [{"name": "pyoci", "version": "0.0.0"}],
         },
         "components": [],
     }
