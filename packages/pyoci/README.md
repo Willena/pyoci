@@ -31,11 +31,11 @@ This mirrors the elegant developer experience that .NET provides with its SDK's 
 ### Installation
 
 ```bash
-# Using pip
-pip install -e .
+# Install the core CLI package from the workspace
+pip install -e packages/pyoci
 
 # Using uv (faster)
-uv pip install -e .
+uv pip install -e packages/pyoci
 
 # Or run directly with uvx (no install needed)
 uvx --from git+https://github.com/willena/pyoci pyoci build --tag myapp:latest
@@ -488,7 +488,25 @@ Known limitations and future enhancements:
 ```bash
 git clone https://github.com/microsoft/pyoci.git
 cd pyoci
-pip install -e .
+pip install -e packages/pyoci
+```
+
+### Workspace Packaging
+
+From the repository root, `uv` now treats `packages/*` as a workspace.
+
+```bash
+# Inspect the workspace packages
+uv workspace list
+
+# Build every publishable package into ./dist
+uv build --all-packages --out-dir dist
+
+# Publish all built artifacts to PyPI
+uv publish --index pypi dist/*
+
+# Or publish to TestPyPI first
+uv publish --index testpypi dist/*
 ```
 
 ### Test a Build

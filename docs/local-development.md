@@ -19,8 +19,8 @@ cd pyoci
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install in editable mode
-pip install -e .
+# Install the core package in editable mode
+pip install -e packages/pyoci
 ```
 
 This installs the `pyoci` command globally in your virtual environment, and any code changes you make are immediately reflected.

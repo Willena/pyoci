@@ -617,7 +617,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install -e .[dev]
+          pip install -e packages/pyoci
       
       - name: Run unit tests
         run: |
@@ -650,7 +650,7 @@ jobs:
           sudo apt-get install -y skopeo
       
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: pip install -e packages/pyoci
       
       - name: Run integration tests
         run: pytest tests/integration/
@@ -674,7 +674,7 @@ jobs:
           python-version: "3.11"
       
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: pip install -e packages/pyoci
       
       - name: Run E2E tests
         run: pytest tests/e2e/ -m e2e
@@ -698,7 +698,7 @@ jobs:
           python-version: "3.11"
       
       - name: Install dependencies
-        run: pip install -e .[dev]
+        run: pip install -e packages/pyoci
       
       - name: Run black
         run: black --check src/ tests/

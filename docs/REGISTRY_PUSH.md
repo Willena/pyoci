@@ -4,7 +4,7 @@ This document shows how to use pyoci to push images to various container registr
 
 ## Prerequisites
 
-- pyoci installed: `pip install -e .`
+- pyoci installed: `pip install -e packages/pyoci`
 - Authentication tokens for your target registry
 
 ## GitHub Container Registry (GHCR)
