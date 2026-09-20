@@ -71,16 +71,34 @@ jobs:
     needs: build
     permissions:
       id-token: write
-    environment:
-      name: pypi
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: hatch-oci
+            dist_glob: "hatch_oci-*"
+            environment: pypi-hatch-oci
+          - package: poetry-oci
+            dist_glob: "poetry_oci-*"
+            environment: pypi-poetry-oci
+          - package: pyoci
+            dist_glob: "pyoci-*"
+            environment: pypi
+    environment: ${{ matrix.environment }}
     steps:
       - name: Download distributions
         uses: actions/download-artifact@v4
         with:
           name: python-dist
-          path: dist
+          path: all-dist/
 
-      - name: Publish distributions
+      - name: Select ${{ matrix.package }} distributions
+        run: |
+          mkdir -p dist
+          cp all-dist/${{ matrix.dist_glob }} dist/
+          ls -l dist/
+
+      - name: Publish ${{ matrix.package }} distributions
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
