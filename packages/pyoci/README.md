@@ -31,14 +31,11 @@ This mirrors the elegant developer experience that .NET provides with its SDK's 
 ### Installation
 
 ```bash
-# Install the core CLI package from the workspace
+# Install the core CLI package from this workspace
 pip install -e packages/pyoci
 
 # Using uv (faster)
 uv pip install -e packages/pyoci
-
-# Or run directly with uvx (no install needed)
-uvx --from git+https://github.com/willena/pyoci pyoci build --tag myapp:latest
 ```
 
 ### Build Your First Image
@@ -127,15 +124,15 @@ docker pull ghcr.io/user/myapp:latest
 docker run -p 8000:8000 ghcr.io/user/myapp:latest
 ```
 
-**See [Local Development Guide](docs/local-development.md) for detailed testing instructions.**
+**See [Local Development Guide](../../docs/local-development.md) for detailed testing instructions.**
 
 ---
 
 ## ✨ Features
 
-### Current Capabilities (Phases 0-2, 4 ✅)
+### Current Capabilities
 
-**Foundation & Registry** (Phases 0-1):
+**Foundation & Registry**:
 - ✅ **Zero Docker dependencies** — Pure Python implementation
 - ✅ **Auto-detects Python project structure** — Finds `src/`, `app/`, entry points
 - ✅ **Infers entrypoints** — Reads `pyproject.toml` scripts, falls back to `python -m`
@@ -152,7 +149,7 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 - ✅ **Cache invalidation** — Detects file changes via mtime + size checks
 - ✅ **Fast incremental builds** — Reuses unchanged layers from cache
 
-**Base Images & Dependencies** (Phase 2):
+**Base Images & Dependencies**:
 - ✅ **Smart base image detection** — Auto-selects Python base image from `requires-python` in pyproject.toml
 - ✅ **Base image support** — Build on top of `python:3.11-slim`, `python:3.12-slim`, distroless, etc.
 - ✅ **Layer merging** — Combines base image layers with application layers
@@ -160,7 +157,7 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 - ✅ **Dependency packaging** — Include pip packages from venv or requirements.txt
 - ✅ **Distroless detection** — Auto-handles shell-less base images
 
-**Production Features** (Phase 4):
+**Production Features**:
 - ✅ **Framework auto-detection** — FastAPI, Flask, Django automatically configured
 - ✅ **Configuration files** — Load settings from `pyoci.toml`
 - ✅ **SBOM generation** — Create SPDX 2.3 or CycloneDX 1.4 security manifests
@@ -170,10 +167,9 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 - ✅ **Verbose logging** — Detailed build progress with `--verbose`
 - ✅ **Dry-run mode** — Preview builds with `--dry-run`
 
-### Coming Soon
-
-- 🔜 **Toolchain integrations** — Poetry, Hatch, Azure Developer CLI (Phase 3)
-- 🔜 **Full multi-arch builds** — Actual cross-compilation for ARM64, AMD64 (Phase 4+)
+**Toolchain integrations**:
+- ✅ Hatch (using `hatch-oci`)
+- ✅ Poetry (using `poetry-oci`)
 
 ---
 
@@ -196,7 +192,7 @@ cli.py (entry point)
 2. **File Collection** — Gathers source files based on auto-detected or configured paths
 3. **Layer Creation** — Packs files into tar archive with correct `/app/` prefixes
 4. **OCI Generation** — Creates manifest and config JSON per OCI Image Spec v1
-5. **Output** — Writes image layout to disk (registry push coming in Phase 1)
+5. **Output** — Writes the OCI image layout to disk and optionally pushes it when `--push` is set
 
 ---
 
@@ -210,9 +206,9 @@ from pyoci.builder import ImageBuilder
 
 config = BuildConfig(
     tag="myapp:latest",
-    context_path="/path/to/app",
+    context_dir="/path/to/app",
     env={"ENV": "production"},
-    include_paths=["src/", "pyproject.toml"]
+    include_paths=["src/", "pyproject.toml"],
 )
 
 builder = ImageBuilder(config)
@@ -220,9 +216,9 @@ builder.build()  # Creates dist/image/
 ```
 
 Perfect for integration with:
-- **Azure Developer CLI (azd)** — Custom build strategies ([docs](docs/azd-integration.md))
-- **GitHub Actions** — Automated CI/CD workflows ([docs](docs/github-actions.md))
-- **Poetry/Hatch** — Build plugins ([plugins](plugins/))
+- **Azure Developer CLI (azd)** — Custom build strategies ([docs](../../docs/azd-integration.md))
+- **GitHub Actions** — Automated CI/CD workflows ([docs](../../docs/github-actions.md))
+- **Poetry/Hatch** — Build plugins in [`packages/`](..)
 - **AI agents** — Copilot, MCP servers, automated scaffolding
 
 ## 🔌 Integrations
@@ -236,7 +232,7 @@ poetry self add poetry-oci
 poetry build-container --tag myapp:latest --push
 ```
 
-[See full documentation →](plugins/poetry-oci/)
+[See full documentation →](../poetry-oci/)
 
 ### Hatch Plugin
 
@@ -245,7 +241,7 @@ pip install hatch-oci
 hatch build  # Builds both wheel and container
 ```
 
-[See full documentation →](plugins/hatch-oci/)
+[See full documentation →](../hatch-oci/)
 
 ### GitHub Actions
 
@@ -258,7 +254,7 @@ jobs:
       push: true
 ```
 
-[See full documentation →](docs/github-actions.md)
+[See full documentation →](../../docs/github-actions.md)
 
 ### Azure Developer CLI
 
@@ -269,7 +265,7 @@ hooks:
     run: pyoci build --tag ${SERVICE_IMAGE_NAME} --push
 ```
 
-[See full documentation →](docs/azd-integration.md)
+[See full documentation →](../../docs/azd-integration.md)
 
 ---
 
@@ -283,7 +279,7 @@ By default, `pyoci` auto-detects:
 - **Entry point**: First `[project.scripts]` entry in `pyproject.toml`
 - **Include paths**: `src/`, `app/`, or `<package>/` dirs + `pyproject.toml`, `requirements.txt`
 - **Working directory**: `/app/`
-- **Architecture**: `amd64/linux`
+- **Architecture**: `linux/amd64`
 
 ### Explicit Configuration
 
@@ -315,6 +311,11 @@ pyoci build \
 - `--base-image IMAGE` — Base image to build on (auto-detected from `requires-python` if not specified, e.g., `python:3.11-slim`)
 - `--include-deps` — Package dependencies from venv or requirements.txt
 
+**Container Metadata**:
+- `--workdir PATH` — Set the container working directory
+- `--env KEY=VALUE` — Add environment variables to the image
+- `--label KEY=VALUE` — Add OCI labels to the image
+
 **Caching Options**:
 - `--no-cache` — Disable layer caching, force full rebuild
 - `--cache-dir PATH` — Custom cache directory (default: `~/.pyoci/cache`)
@@ -341,7 +342,7 @@ from pyoci.builder import ImageBuilder
 
 config = BuildConfig(
     tag="myapp:latest",
-    context_path=".",
+    context_dir=".",
     base_image="python:3.11-slim",  # Optional: auto-detected if omitted
     include_deps=True,
     workdir="/app",
@@ -351,7 +352,7 @@ config = BuildConfig(
     entrypoint=["python", "-m", "myapp"],
     generate_sbom="spdx",
     reproducible=True,
-    verbose=True
+    verbose=True,
 )
 
 builder = ImageBuilder(config)
@@ -376,53 +377,9 @@ version = "1.0.0"
 PORT = "8080"
 ENV = "production"
 DEBUG = "false"
-
-[registry]
-url = "ghcr.io/myorg/myapp"
 ```
 
----
-
-## 🗺️ Roadmap
-
-### ✅ **Phase 0: Foundation** (COMPLETE)
-
-- Core OCI image generation
-- Basic CLI and Python API
-- Project introspection and auto-detection
-- File packing and layer creation
-
-### ✅ **Phase 1: Registry & Caching** (COMPLETE)
-
-- [x] Implement complete OCI image layout (index.json, refs/)
-- [x] Push images to registries via Docker Registry v2 API
-- [x] Support authentication (GHCR, ACR, Docker Hub, private registries)
-- [x] Add layer caching and reuse logic
-- [x] Digest verification and content-addressable storage
-
-### ✅ **Phase 2: Base Images & Dependencies** (COMPLETE)
-
-- [x] Pull and parse base image manifests
-- [x] Layer Python app files on top of base images
-- [x] Support slim, distroless, and custom base images
-- [x] Package pip-installed dependencies into layers
-- [x] Respect base image configuration (env, labels, user)
-
-### ✅ **Phase 3: Toolchain Integrations** (COMPLETE)
-
-- [x] Poetry plugin (`poetry build-container`)
-- [x] Hatch build hook
-- [x] Azure Developer CLI (azd) integration
-- [x] GitHub Actions reusable workflow
-
-### ✅ **Phase 4: Polish & Production Readiness** (COMPLETE)
-
-- [x] Framework auto-detection (FastAPI, Flask, Django)
-- [x] `pyoci.toml` configuration schema
-- [x] SBOM (Software Bill of Materials) generation
-- [x] Reproducible builds (deterministic layer creation)
-- [x] Platform configuration (metadata for multi-arch)
-- [x] Verbose logging and diagnostics
+Use the image tag itself or `--registry` at build time to control the push target.
 
 ---
 
@@ -480,7 +437,7 @@ Known limitations and future enhancements:
 
 ### Prerequisites
 
-- Python 3.10+ (uses `tomllib` for TOML parsing)
+- Python 3.11+ (uses `tomllib`)
 - No other dependencies — pure stdlib
 
 ### Install for Development
@@ -488,7 +445,10 @@ Known limitations and future enhancements:
 ```bash
 git clone https://github.com/microsoft/pyoci.git
 cd pyoci
-pip install -e packages/pyoci
+uv sync --all-packages --group dev
+
+# Format the whole workspace
+uv run ruff format .
 ```
 
 ### Workspace Packaging
@@ -548,9 +508,9 @@ This style is intentional for the experimental phase.
 
 ### Documentation
 
-- **[Local Development Guide](docs/local-development.md)** — Complete guide for using pyoci locally
-- **[Azure Developer CLI Integration](docs/azd-integration.md)** — Deploy to Azure with azd
-- **[GitHub Actions Guide](docs/github-actions.md)** — Automate builds in CI/CD
+- **[Local Development Guide](../../docs/local-development.md)** — Complete guide for using pyoci locally
+- **[Azure Developer CLI Integration](../../docs/azd-integration.md)** — Deploy to Azure with azd
+- **[GitHub Actions Guide](../../docs/github-actions.md)** — Automate builds in CI/CD
 
 ### External References
 

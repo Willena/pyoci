@@ -236,7 +236,8 @@ poetry install
 # Build container locally
 poetry build-container --tag myapp:dev
 
-# Test with Docker (for validation only)
+# Import the OCI layout into Docker for validation
+skopeo copy oci:dist/image docker-daemon:myapp:dev
 docker run myapp:dev
 ```
 
@@ -261,8 +262,6 @@ base_image = "python:3.11-slim"
 [tool.pyoci.env]
 # Development
 ENV = "development"
-
-# Override in CI with --env flag or environment variables
 ```
 
 ### Framework Auto-Detection

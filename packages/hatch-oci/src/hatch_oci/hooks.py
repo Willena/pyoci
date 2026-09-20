@@ -21,7 +21,7 @@ class ContainerBuildHook(BuildHookInterface):
         if not root_logger.handlers:
             logging.basicConfig(
                 level=log_level,
-                format='%(levelname)s: %(message)s' if verbose else '%(message)s',
+                format="%(levelname)s: %(message)s" if verbose else "%(message)s",
             )
 
     def dependencies(self) -> list[str]:
@@ -37,10 +37,7 @@ class ContainerBuildHook(BuildHookInterface):
             from pyoci.config import BuildConfig
             from pyoci.builder import ImageBuilder
         except ImportError:
-            raise RuntimeError(
-                "pyoci is not installed. "
-                "Install it with: pip install pyoci"
-            )
+            raise RuntimeError("pyoci is not installed. Install it with: pip install pyoci")
 
         root = Path(self.root)
 
@@ -49,6 +46,7 @@ class ContainerBuildHook(BuildHookInterface):
         if not tag:
             # Read from pyproject.toml
             import tomllib
+
             pyproject_path = root / "pyproject.toml"
             if pyproject_path.exists():
                 with open(pyproject_path, "rb") as f:
@@ -60,10 +58,12 @@ class ContainerBuildHook(BuildHookInterface):
                 tag = f"app:{version}"
 
         base_image = self.config.get("base-image", "python:3.11-slim")
+        registry = self.config.get("registry")
         push = self.config["push"] if "push" in self.config else False
         include_deps = self.config["include-deps"] if "include-deps" in self.config else True
         sbom = self.config.get("sbom")
         verbose = self.config["verbose"] if "verbose" in self.config else False
+        platform = self.config.get("platform", "linux/amd64")
         env = dict(self.config.get("env", {}))
         labels = dict(self.config.get("labels", {}))
         use_cache = not self.config["no-cache"] if "no-cache" in self.config else True
@@ -83,6 +83,7 @@ class ContainerBuildHook(BuildHookInterface):
             env=env,
             labels=labels,
             verbose=verbose,
+            platform=platform,
             use_cache=use_cache,
             clean_output_dir=clean_output_dir,
         )
@@ -97,7 +98,7 @@ class ContainerBuildHook(BuildHookInterface):
 
             # Push if requested
             if push:
-                builder.push()
+                builder.push(registry_url=registry)
 
         except Exception as e:
             raise RuntimeError(f"Container build failed: {e}")

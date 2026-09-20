@@ -58,23 +58,20 @@ from unittest.mock import Mock, patch
 from pyoci.builder import ImageBuilder
 from pyoci.config import BuildConfig
 
+
 class TestImageBuilder:
     def test_build_creates_layer_tar(self, tmp_path):
         """Test that build() creates a tar file for the layer."""
-        config = BuildConfig(
-            tag="test:latest",
-            context_path=tmp_path,
-            include_paths=["app.py"]
-        )
-        
+        config = BuildConfig(tag="test:latest", context_path=tmp_path, include_paths=["app.py"])
+
         # Create test file
         (tmp_path / "app.py").write_text("print('hello')")
-        
+
         builder = ImageBuilder(config)
         with patch("pyoci.builder.hash_file") as mock_hash:
             mock_hash.return_value = "abc123"
             builder.build()
-        
+
         assert (tmp_path / "dist/image/blobs/sha256/abc123").exists()
 ```
 
@@ -173,32 +170,31 @@ import subprocess
 from pyoci.builder import ImageBuilder
 from pyoci.config import BuildConfig
 
+
 @pytest.fixture
 def local_registry():
     """Start and stop local Docker registry."""
-    subprocess.run(["docker", "run", "-d", "-p", "5000:5000", 
-                    "--name", "test-registry", "registry:2"])
+    subprocess.run(
+        ["docker", "run", "-d", "-p", "5000:5000", "--name", "test-registry", "registry:2"]
+    )
     yield "localhost:5000"
     subprocess.run(["docker", "rm", "-f", "test-registry"])
+
 
 def test_push_to_local_registry(tmp_path, local_registry):
     """Test pushing an image to a local registry."""
     # Create test app
     (tmp_path / "app.py").write_text("print('test')")
-    
+
     # Build and push
-    config = BuildConfig(
-        tag=f"{local_registry}/test:latest",
-        context_path=tmp_path
-    )
+    config = BuildConfig(tag=f"{local_registry}/test:latest", context_path=tmp_path)
     builder = ImageBuilder(config)
     builder.build()
     builder.push()  # Phase 1 feature
-    
+
     # Verify with skopeo
     result = subprocess.run(
-        ["skopeo", "inspect", f"docker://{local_registry}/test:latest"],
-        capture_output=True
+        ["skopeo", "inspect", f"docker://{local_registry}/test:latest"], capture_output=True
     )
     assert result.returncode == 0
 ```
@@ -248,12 +244,13 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+
 @pytest.fixture
 def test_project(tmp_path):
     """Create a minimal test Python project."""
     project = tmp_path / "testapp"
     project.mkdir()
-    
+
     (project / "app.py").write_text("print('Hello from container')")
     (project / "pyproject.toml").write_text("""
 [project]
@@ -263,22 +260,22 @@ version = "0.1.0"
 [project.scripts]
 testapp = "app:main"
 """)
-    
+
     return project
+
 
 @pytest.fixture
 def verify_image():
     """Helper to verify OCI image with external tools."""
+
     def _verify(image_path: Path):
         # Check with skopeo
         result = subprocess.run(
-            ["skopeo", "inspect", f"oci:{image_path}"],
-            capture_output=True,
-            text=True
+            ["skopeo", "inspect", f"oci:{image_path}"], capture_output=True, text=True
         )
         assert result.returncode == 0, f"Invalid OCI image: {result.stderr}"
         return result.stdout
-    
+
     return _verify
 ```
 
@@ -323,61 +320,90 @@ import subprocess
 import requests
 import time
 
+
 @pytest.mark.e2e
-@pytest.mark.skipif(not os.getenv("AZURE_SUBSCRIPTION_ID"), 
-                    reason="Azure subscription required")
+@pytest.mark.skipif(not os.getenv("AZURE_SUBSCRIPTION_ID"), reason="Azure subscription required")
 def test_fastapi_app_deployment():
     """
     End-to-end test: Build FastAPI app, push to ACR, deploy to ACA, verify.
     """
     # 1. Create FastAPI app
     project = create_fastapi_app()
-    
+
     # 2. Build container
-    builder = ImageBuilder(BuildConfig(
-        tag="testacr.azurecr.io/fastapi-test:e2e",
-        context_path=project,
-        base_image="python:3.11-slim"
-    ))
+    builder = ImageBuilder(
+        BuildConfig(
+            tag="testacr.azurecr.io/fastapi-test:e2e",
+            context_path=project,
+            base_image="python:3.11-slim",
+        )
+    )
     builder.build()
     builder.push()
-    
+
     # 3. Deploy to Azure Container Apps
     app_name = f"fastapi-test-{uuid.uuid4().hex[:8]}"
-    subprocess.run([
-        "az", "containerapp", "create",
-        "--name", app_name,
-        "--resource-group", "pyoci-e2e-tests",
-        "--image", "testacr.azurecr.io/fastapi-test:e2e",
-        "--ingress", "external",
-        "--target-port", "8000"
-    ], check=True)
-    
+    subprocess.run(
+        [
+            "az",
+            "containerapp",
+            "create",
+            "--name",
+            app_name,
+            "--resource-group",
+            "pyoci-e2e-tests",
+            "--image",
+            "testacr.azurecr.io/fastapi-test:e2e",
+            "--ingress",
+            "external",
+            "--target-port",
+            "8000",
+        ],
+        check=True,
+    )
+
     # 4. Get app URL
-    result = subprocess.run([
-        "az", "containerapp", "show",
-        "--name", app_name,
-        "--resource-group", "pyoci-e2e-tests",
-        "--query", "properties.configuration.ingress.fqdn",
-        "-o", "tsv"
-    ], capture_output=True, text=True, check=True)
+    result = subprocess.run(
+        [
+            "az",
+            "containerapp",
+            "show",
+            "--name",
+            app_name,
+            "--resource-group",
+            "pyoci-e2e-tests",
+            "--query",
+            "properties.configuration.ingress.fqdn",
+            "-o",
+            "tsv",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     app_url = f"https://{result.stdout.strip()}"
-    
+
     # 5. Wait for deployment
     time.sleep(30)
-    
+
     # 6. Verify app responds
     response = requests.get(f"{app_url}/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
-    
+
     # 7. Cleanup
-    subprocess.run([
-        "az", "containerapp", "delete",
-        "--name", app_name,
-        "--resource-group", "pyoci-e2e-tests",
-        "--yes"
-    ])
+    subprocess.run(
+        [
+            "az",
+            "containerapp",
+            "delete",
+            "--name",
+            app_name,
+            "--resource-group",
+            "pyoci-e2e-tests",
+            "--yes",
+        ]
+    )
 ```
 
 ##### E2E Test 2: Django App with PostgreSQL on AKS
@@ -391,29 +417,31 @@ def test_django_app_with_db():
     """
     # 1. Create Django app with models
     project = create_django_app_with_db()
-    
+
     # 2. Build and push
-    builder = ImageBuilder(BuildConfig(
-        tag="ghcr.io/test/django-app:e2e",
-        context_path=project,
-        include_deps=True  # Include pip dependencies
-    ))
+    builder = ImageBuilder(
+        BuildConfig(
+            tag="ghcr.io/test/django-app:e2e",
+            context_path=project,
+            include_deps=True,  # Include pip dependencies
+        )
+    )
     builder.build()
     builder.push()
-    
+
     # 3. Deploy to AKS with Kubernetes manifests
     kubectl_apply("tests/e2e/fixtures/django-deployment.yaml")
-    
+
     # 4. Wait for pod ready
     wait_for_pod_ready("app=django-test")
-    
+
     # 5. Run migrations
     kubectl_exec("django-test", "python manage.py migrate")
-    
+
     # 6. Verify app
     response = requests.get("http://<ingress-ip>/admin/")
     assert response.status_code == 200
-    
+
     # 7. Cleanup
     kubectl_delete("tests/e2e/fixtures/django-deployment.yaml")
 ```
@@ -560,23 +588,28 @@ tests/fixtures/flask_app/
 import pytest
 from pathlib import Path
 
+
 @pytest.fixture
 def fixtures_dir():
     """Path to test fixtures directory."""
     return Path(__file__).parent / "fixtures"
 
+
 @pytest.fixture
 def minimal_project(fixtures_dir, tmp_path):
     """Copy minimal project to temp directory."""
     import shutil
+
     project = tmp_path / "minimal"
     shutil.copytree(fixtures_dir / "minimal", project)
     return project
+
 
 @pytest.fixture
 def mock_registry():
     """Mock registry client for unit tests."""
     from unittest.mock import Mock
+
     mock = Mock()
     mock.push_blob.return_value = True
     mock.push_manifest.return_value = True
@@ -700,8 +733,8 @@ jobs:
       - name: Install dependencies
         run: pip install -e packages/pyoci
       
-      - name: Run black
-        run: black --check src/ tests/
+      - name: Run Ruff format check
+        run: uv run ruff format --check packages
       
       - name: Run mypy
         run: mypy src/
@@ -729,7 +762,7 @@ jobs:
 ### Static Analysis
 
 - **Linter**: `pylint` (score >8.0)
-- **Formatter**: `black` (enforced in CI)
+- **Formatter**: `ruff format` (enforced in CI)
 - **Type Checker**: `mypy` (strict mode)
 - **Import Sorter**: `isort`
 
@@ -753,18 +786,17 @@ Use descriptive, behavior-focused names:
 
 ```python
 # Good
-def test_build_includes_all_files_from_src_directory():
-    ...
+def test_build_includes_all_files_from_src_directory(): ...
 
-def test_registry_push_retries_on_transient_failure():
-    ...
+
+def test_registry_push_retries_on_transient_failure(): ...
+
 
 # Bad
-def test_build():
-    ...
+def test_build(): ...
 
-def test_push():
-    ...
+
+def test_push(): ...
 ```
 
 ### 2. Arrange-Act-Assert Pattern
@@ -795,7 +827,7 @@ def fastapi_project(tmp_path):
     """Create a FastAPI project structure."""
     project = tmp_path / "fastapi_app"
     project.mkdir()
-    
+
     (project / "main.py").write_text("""
 from fastapi import FastAPI
 app = FastAPI()
@@ -804,10 +836,11 @@ app = FastAPI()
 def root():
     return {"message": "Hello World"}
 """)
-    
+
     (project / "requirements.txt").write_text("fastapi\nuvicorn")
-    
+
     return project
+
 
 def test_fastapi_entrypoint_detection(fastapi_project):
     entrypoint = detect_entrypoint(fastapi_project)
@@ -817,11 +850,14 @@ def test_fastapi_entrypoint_detection(fastapi_project):
 ### 4. Parameterized Tests
 
 ```python
-@pytest.mark.parametrize("base_image,expected_os", [
-    ("python:3.11-slim", "linux"),
-    ("python:3.11-alpine", "linux"),
-    ("mcr.microsoft.com/python/distroless", "linux"),
-])
+@pytest.mark.parametrize(
+    "base_image,expected_os",
+    [
+        ("python:3.11-slim", "linux"),
+        ("python:3.11-alpine", "linux"),
+        ("mcr.microsoft.com/python/distroless", "linux"),
+    ],
+)
 def test_base_image_os_detection(base_image, expected_os):
     config = BuildConfig(base_image=base_image)
     assert config.platform_os == expected_os

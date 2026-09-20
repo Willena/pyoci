@@ -29,6 +29,7 @@ class FakeImageBuilder:
         self.config = config
         self.build_calls = 0
         self.push_calls = 0
+        self.push_registry_urls: list[str | None] = []
         type(self).instances.append(self)
 
     def build(self):
@@ -36,8 +37,9 @@ class FakeImageBuilder:
         if type(self).build_error is not None:
             raise type(self).build_error
 
-    def push(self):
+    def push(self, registry_url=None):
         self.push_calls += 1
+        self.push_registry_urls.append(registry_url)
 
 
 @pytest.fixture(autouse=True)
@@ -94,10 +96,12 @@ def test_initialize_builds_image_with_explicit_config(tmp_path, fake_pycontainer
         {
             "tag": "acme/demo:1.2.3",
             "base-image": "python:3.12-alpine",
+            "registry": "ghcr.io/acme/demo:1.2.3",
             "push": True,
             "include-deps": False,
             "sbom": "spdx",
             "verbose": True,
+            "platform": "linux/arm64",
             "env": {"APP_ENV": "prod"},
             "labels": {"maintainer": "team@example.com"},
             "no-cache": True,
@@ -121,6 +125,7 @@ def test_initialize_builds_image_with_explicit_config(tmp_path, fake_pycontainer
             "org.opencontainers.image.version": "1.2.3",
         },
         "verbose": True,
+        "platform": "linux/arm64",
         "use_cache": False,
         "clean_output_dir": True,
     }
@@ -131,6 +136,7 @@ def test_initialize_builds_image_with_explicit_config(tmp_path, fake_pycontainer
     assert builder.config is build_config
     assert builder.build_calls == 1
     assert builder.push_calls == 1
+    assert builder.push_registry_urls == ["ghcr.io/acme/demo:1.2.3"]
 
     assert build_data == {
         "container_image": {

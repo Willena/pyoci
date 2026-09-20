@@ -12,7 +12,7 @@ class ContainerBuildCommand(Command):
 
     name = "build-container"
     description = "Build an OCI container image using pyoci"
-    
+
     options = [
         option("tag", "t", "Container image tag", flag=False, default=None),
         option("base-image", "b", "Base container image", flag=False, default=None),
@@ -33,7 +33,7 @@ class ContainerBuildCommand(Command):
         if not root_logger.handlers:
             logging.basicConfig(
                 level=log_level,
-                format='%(levelname)s: %(message)s' if verbose else '%(message)s',
+                format="%(levelname)s: %(message)s" if verbose else "%(message)s",
             )
 
     def handle(self) -> int:
@@ -44,19 +44,18 @@ class ContainerBuildCommand(Command):
             from pyoci.builder import ImageBuilder
         except ImportError:
             self.line_error(
-                "<error>pyoci is not installed. "
-                "Install it with: pip install pyoci</error>"
+                "<error>pyoci is not installed. Install it with: pip install pyoci</error>"
             )
             return 1
 
         # Get Poetry project
         poetry = self.poetry
         package = poetry.package
-        
+
         # Read configuration from pyproject.toml [tool.pyoci]
         pyproject = poetry.pyproject
         tool_config = pyproject.data.get("tool", {}).get("pyoci", {})
-        
+
         # Determine tag
         tag = self.option("tag")
         if not tag:
@@ -65,7 +64,7 @@ class ContainerBuildCommand(Command):
             name = package.name
             version = str(package.version)
             tag = f"{name}:{version}"
-        
+
         # Build configuration
         if self.io.input.has_parameter_option("--base-image"):
             base_image = self.option("base-image")
@@ -96,24 +95,26 @@ class ContainerBuildCommand(Command):
         clean_output_dir = tool_config.get("clean_output_dir", False)
 
         self._configure_logging(verbose)
-        
+
         # Get environment variables from config
         env = tool_config.get("env", {})
         labels = tool_config.get("labels", {})
-        
+
         # Add Poetry metadata to labels
-        labels.update({
-            "org.opencontainers.image.title": package.name,
-            "org.opencontainers.image.version": str(package.version),
-            "org.opencontainers.image.description": package.description or "",
-        })
+        labels.update(
+            {
+                "org.opencontainers.image.title": package.name,
+                "org.opencontainers.image.version": str(package.version),
+                "org.opencontainers.image.description": package.description or "",
+            }
+        )
         if package.authors:
             authors = ", ".join(str(a) for a in package.authors)
             labels["org.opencontainers.image.authors"] = authors
-        
+
         # Get project path
         project_path = poetry.file.path.parent
-        
+
         # Create build configuration
         config = BuildConfig(
             tag=tag,
@@ -127,26 +128,27 @@ class ContainerBuildCommand(Command):
             use_cache=not no_cache,
             clean_output_dir=clean_output_dir,
         )
-        
+
         # Generate SBOM if requested
         if sbom:
             config.generate_sbom = sbom
-        
+
         # Build the image
         try:
             builder = ImageBuilder(config)
             builder.build()
-            
+
             # Push if requested
             if push:
                 builder.push(registry_url=registry)
-            
+
             return 0
-            
+
         except Exception as e:
             self.line_error(f"<error>Build failed: {e}</error>")
             if verbose:
                 import traceback
+
                 self.line_error(traceback.format_exc())
             return 1
 

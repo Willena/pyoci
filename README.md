@@ -1,6 +1,6 @@
 # 🐍 pyoci
 
-> **Build OCI container images from Python projects — no Docker required**
+> **Build OCI container images from Python projects — Docker-free, pure Python**
 
 A native, Docker-free container image builder for Python, inspired by .NET's `PublishContainer`. Create production-ready OCI images using pure Python, without Dockerfiles or Docker daemon.
 
@@ -21,8 +21,7 @@ pyoci build
 ```
 
 That's it. No Dockerfile. No Docker daemon. Just pure Python creating OCI-compliant container images.
-
-This mirrors the elegant developer experience that .NET provides with its SDK's native container publishing — now available for Python.
+This mirrors the elegant developer experience that .NET provides with its SDK's native container publishing — but for Python.
 
 ---
 
@@ -31,14 +30,24 @@ This mirrors the elegant developer experience that .NET provides with its SDK's 
 ### Installation
 
 ```bash
-# Install the core CLI package from the workspace
-pip install -e packages/pyoci
+# Use pip or your favourite dependency tool
+pip install pyoci
+```
 
-# Using uv (faster)
-uv pip install -e packages/pyoci
+### Locally build the Workspace Packages
 
-# Or run directly with uvx (no install needed)
-uvx --from git+https://github.com/willena/pyoci pyoci build --tag myapp:latest
+```bash
+# Inspect the workspace members
+uv workspace list
+
+# Build every publishable package into ./dist
+uv build --all-packages --out-dir dist
+
+# Publish all built artifacts to TestPyPI
+uv publish --index testpypi dist/*
+
+# Publish all built artifacts to PyPI
+uv publish --index pypi dist/*
 ```
 
 ### Build Your First Image
@@ -92,15 +101,11 @@ dist/image/
 
 ### Testing Locally
 
-**Important**: `pyoci` creates OCI-compliant image layouts, not Docker-specific images. To test locally:
+**Important**: `PyOCI` creates OCI-compliant image layouts, not Docker-specific images. To test locally:
 
 #### Option 1: Use Skopeo (Recommended)
 
 ```bash
-# Install skopeo
-brew install skopeo  # macOS
-# OR: sudo apt-get install skopeo  (Ubuntu)
-
 # Copy OCI layout to Docker
 skopeo copy oci:dist/image docker-daemon:myapp:latest
 docker run -p 8000:8000 myapp:latest
@@ -109,9 +114,6 @@ docker run -p 8000:8000 myapp:latest
 #### Option 2: Use Podman (Native OCI Support)
 
 ```bash
-# Install Podman
-brew install podman  # macOS
-
 # Run directly from OCI layout
 podman run --rm -p 8000:8000 oci:dist/image:myapp
 ```
@@ -133,9 +135,9 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 
 ## ✨ Features
 
-### Current Capabilities (Phases 0-2, 4 ✅)
+### Current Capabilities
 
-**Foundation & Registry** (Phases 0-1):
+**Foundation & Registry**:
 - ✅ **Zero Docker dependencies** — Pure Python implementation
 - ✅ **Auto-detects Python project structure** — Finds `src/`, `app/`, entry points
 - ✅ **Infers entrypoints** — Reads `pyproject.toml` scripts, falls back to `python -m`
@@ -152,7 +154,7 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 - ✅ **Cache invalidation** — Detects file changes via mtime + size checks
 - ✅ **Fast incremental builds** — Reuses unchanged layers from cache
 
-**Base Images & Dependencies** (Phase 2):
+**Base Images & Dependencies**:
 - ✅ **Smart base image detection** — Auto-selects Python base image from `requires-python` in pyproject.toml
 - ✅ **Base image support** — Build on top of `python:3.11-slim`, `python:3.12-slim`, distroless, etc.
 - ✅ **Layer merging** — Combines base image layers with application layers
@@ -160,7 +162,7 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 - ✅ **Dependency packaging** — Include pip packages from venv or requirements.txt
 - ✅ **Distroless detection** — Auto-handles shell-less base images
 
-**Production Features** (Phase 4):
+**Production Features**:
 - ✅ **Framework auto-detection** — FastAPI, Flask, Django automatically configured
 - ✅ **Configuration files** — Load settings from `pyoci.toml`
 - ✅ **SBOM generation** — Create SPDX 2.3 or CycloneDX 1.4 security manifests
@@ -170,10 +172,9 @@ docker run -p 8000:8000 ghcr.io/user/myapp:latest
 - ✅ **Verbose logging** — Detailed build progress with `--verbose`
 - ✅ **Dry-run mode** — Preview builds with `--dry-run`
 
-### Coming Soon
-
-- 🔜 **Toolchain integrations** — Poetry, Hatch, Azure Developer CLI (Phase 3)
-- 🔜 **Full multi-arch builds** — Actual cross-compilation for ARM64, AMD64 (Phase 4+)
+**Toolchain integrations**:
+- ✅ Hatch (using `hatch-oci` )
+- ✅ Poetry (using `poetry-oci`)
 
 ---
 
@@ -196,7 +197,7 @@ cli.py (entry point)
 2. **File Collection** — Gathers source files based on auto-detected or configured paths
 3. **Layer Creation** — Packs files into tar archive with correct `/app/` prefixes
 4. **OCI Generation** — Creates manifest and config JSON per OCI Image Spec v1
-5. **Output** — Writes image layout to disk (registry push coming in Phase 1)
+5. **Output** — Writes the OCI image layout to disk and optionally pushes it when `--push` is set
 
 ---
 
@@ -210,9 +211,9 @@ from pyoci.builder import ImageBuilder
 
 config = BuildConfig(
     tag="myapp:latest",
-    context_path="/path/to/app",
+    context_dir="/path/to/app",
     env={"ENV": "production"},
-    include_paths=["src/", "pyproject.toml"]
+    include_paths=["src/", "pyproject.toml"],
 )
 
 builder = ImageBuilder(config)
@@ -222,7 +223,7 @@ builder.build()  # Creates dist/image/
 Perfect for integration with:
 - **Azure Developer CLI (azd)** — Custom build strategies ([docs](docs/azd-integration.md))
 - **GitHub Actions** — Automated CI/CD workflows ([docs](docs/github-actions.md))
-- **Poetry/Hatch** — Build plugins ([plugins](plugins/))
+- **Poetry/Hatch** — Build plugins in [`packages/`](packages/)
 - **AI agents** — Copilot, MCP servers, automated scaffolding
 
 ## 🔌 Integrations
@@ -236,7 +237,7 @@ poetry self add poetry-oci
 poetry build-container --tag myapp:latest --push
 ```
 
-[See full documentation →](plugins/poetry-oci/)
+[See full documentation →](packages/poetry-oci/)
 
 ### Hatch Plugin
 
@@ -245,7 +246,7 @@ pip install hatch-oci
 hatch build  # Builds both wheel and container
 ```
 
-[See full documentation →](plugins/hatch-oci/)
+[See full documentation →](packages/hatch-oci/)
 
 ### GitHub Actions
 
@@ -283,7 +284,7 @@ By default, `pyoci` auto-detects:
 - **Entry point**: First `[project.scripts]` entry in `pyproject.toml`
 - **Include paths**: `src/`, `app/`, or `<package>/` dirs + `pyproject.toml`, `requirements.txt`
 - **Working directory**: `/app/`
-- **Architecture**: `amd64/linux`
+- **Architecture**: `linux/amd64`
 
 ### Explicit Configuration
 
@@ -315,6 +316,11 @@ pyoci build \
 - `--base-image IMAGE` — Base image to build on (auto-detected from `requires-python` if not specified, e.g., `python:3.11-slim`)
 - `--include-deps` — Package dependencies from venv or requirements.txt
 
+**Container Metadata**:
+- `--workdir PATH` — Set the container working directory
+- `--env KEY=VALUE` — Add environment variables to the image
+- `--label KEY=VALUE` — Add OCI labels to the image
+
 **Caching Options**:
 - `--no-cache` — Disable layer caching, force full rebuild
 - `--cache-dir PATH` — Custom cache directory (default: `~/.pyoci/cache`)
@@ -341,7 +347,7 @@ from pyoci.builder import ImageBuilder
 
 config = BuildConfig(
     tag="myapp:latest",
-    context_path=".",
+    context_dir=".",
     base_image="python:3.11-slim",  # Optional: auto-detected if omitted
     include_deps=True,
     workdir="/app",
@@ -351,7 +357,7 @@ config = BuildConfig(
     entrypoint=["python", "-m", "myapp"],
     generate_sbom="spdx",
     reproducible=True,
-    verbose=True
+    verbose=True,
 )
 
 builder = ImageBuilder(config)
@@ -376,53 +382,9 @@ version = "1.0.0"
 PORT = "8080"
 ENV = "production"
 DEBUG = "false"
-
-[registry]
-url = "ghcr.io/myorg/myapp"
 ```
 
----
-
-## 🗺️ Roadmap
-
-### ✅ **Phase 0: Foundation** (COMPLETE)
-
-- Core OCI image generation
-- Basic CLI and Python API
-- Project introspection and auto-detection
-- File packing and layer creation
-
-### ✅ **Phase 1: Registry & Caching** (COMPLETE)
-
-- [x] Implement complete OCI image layout (index.json, refs/)
-- [x] Push images to registries via Docker Registry v2 API
-- [x] Support authentication (GHCR, ACR, Docker Hub, private registries)
-- [x] Add layer caching and reuse logic
-- [x] Digest verification and content-addressable storage
-
-### ✅ **Phase 2: Base Images & Dependencies** (COMPLETE)
-
-- [x] Pull and parse base image manifests
-- [x] Layer Python app files on top of base images
-- [x] Support slim, distroless, and custom base images
-- [x] Package pip-installed dependencies into layers
-- [x] Respect base image configuration (env, labels, user)
-
-### ✅ **Phase 3: Toolchain Integrations** (COMPLETE)
-
-- [x] Poetry plugin (`poetry build-container`)
-- [x] Hatch build hook
-- [x] Azure Developer CLI (azd) integration
-- [x] GitHub Actions reusable workflow
-
-### ✅ **Phase 4: Polish & Production Readiness** (COMPLETE)
-
-- [x] Framework auto-detection (FastAPI, Flask, Django)
-- [x] `pyoci.toml` configuration schema
-- [x] SBOM (Software Bill of Materials) generation
-- [x] Reproducible builds (deterministic layer creation)
-- [x] Platform configuration (metadata for multi-arch)
-- [x] Verbose logging and diagnostics
+Use the image tag itself or `--registry` at build time to control the push target.
 
 ---
 
@@ -449,14 +411,8 @@ Works in GitHub Codespaces, Dev Box, locked-down environments — anywhere Pytho
 
 ### For Python Developers
 - Simpler workflow than Dockerfiles
-- No Docker Desktop licensing concerns
+- No Docker requirement
 - Faster onboarding for containerization
-
-### For Microsoft & Azure
-- Unified multi-language container story (aligns with .NET, Java/Jib)
-- Enables Dockerless Azure Developer CLI workflows
-- First-class integration with Copilot and agentic systems
-- Better dev experience in Codespaces and cloud dev environments
 
 ### For the Python Ecosystem
 - A modern, standards-based approach to container builds
@@ -480,15 +436,18 @@ Known limitations and future enhancements:
 
 ### Prerequisites
 
-- Python 3.10+ (uses `tomllib` for TOML parsing)
+- Python 3.11+ (uses `tomllib`)
 - No other dependencies — pure stdlib
 
 ### Install for Development
 
 ```bash
-git clone https://github.com/microsoft/pyoci.git
+git clone https://github.com/willena/pyoci.git
 cd pyoci
-pip install -e packages/pyoci
+uv sync --all-packages --group dev
+
+# Format the whole workspace
+uv run ruff format .
 ```
 
 ### Workspace Packaging
@@ -499,14 +458,15 @@ From the repository root, `uv` now treats `packages/*` as a workspace.
 # Inspect the workspace packages
 uv workspace list
 
-# Build every publishable package into ./dist
+# Build a single package
+uv build --package pyoci --out-dir dist
+
+# Build every publishable package
 uv build --all-packages --out-dir dist
 
-# Publish all built artifacts to PyPI
-uv publish --index pypi dist/*
-
-# Or publish to TestPyPI first
+# Publish to TestPyPI first, then PyPI
 uv publish --index testpypi dist/*
+uv publish --index pypi dist/*
 ```
 
 ### Test a Build
@@ -532,16 +492,6 @@ docker run test:latest
 podman run oci:dist/image:test
 ```
 
-### Code Style
-
-This codebase uses **ultra-minimalist, compact Python**:
-- Semicolons for simple multi-statement lines
-- No docstrings on trivial functions
-- Aggressive use of pathlib and comprehensions
-- Dataclasses over dicts for structured data
-
-This style is intentional for the experimental phase.
-
 ---
 
 ## 📚 Resources
@@ -556,8 +506,6 @@ This style is intentional for the experimental phase.
 
 - **OCI Image Spec**: [opencontainers/image-spec](https://github.com/opencontainers/image-spec)
 - **Docker Registry v2 API**: [Docker Registry HTTP API V2](https://docs.docker.com/registry/spec/api/)
-- **.NET Native Containers**: [Announcing built-in container support](https://devblogs.microsoft.com/dotnet/announcing-builtin-container-support-for-the-dotnet-sdk/)
-- **Project Tracking**: See `IMPLEMENTATION_PLAN.md` for detailed roadmap
 
 ---
 
@@ -571,10 +519,7 @@ MIT License - See [LICENSE](LICENSE) for details
 
 Inspired by:
 
+- [spboyer/pycontainer-build](https://github.com/spboyer/pycontainer-build) — The original repository that served as base for this work.  
 - [.NET SDK's native container support](https://github.com/dotnet/sdk-container-builds)
 - [Jib (Java)](https://github.com/GoogleContainerTools/jib) — Daemonless container builds
 - [ko (Go)](https://github.com/ko-build/ko) — Simple container images for Go
-
----
-
-Built with ❤️ by the Microsoft Python & Azure tooling teams

@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+
 @dataclass
 class BuildConfig:
     tag: str = "local/test:latest"
@@ -25,4 +26,4 @@ class BuildConfig:
     dry_run: bool = False
     platform: str = "linux/amd64"
     reproducible: bool = True
-    generate_sbom: bool = False
+    generate_sbom: bool | str = False

@@ -1,12 +1,13 @@
 [project]
 name = "pyoci"
-version = "0.3.1"
-description = "Experimental .NET-style native OCI image builder for Python projects (no Docker daemon, no Dockerfile)."
+version = "0.1.0"
+description = "Experimental OCI image builder for Python projects (pure Python, Docker-less, Dockerfile-less)."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-  { name = "pyoci contributors" }
+  { name = "PyOCI contributors" }
 ]
+license = "MIT"
 dependencies = []
 
 [project.scripts]
