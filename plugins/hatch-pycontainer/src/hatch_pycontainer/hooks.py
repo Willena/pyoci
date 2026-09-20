@@ -1,5 +1,6 @@
 """Hatch build hooks for pycontainer-build."""
 
+import logging
 from pathlib import Path
 from typing import Any, Dict
 from hatchling.plugin import hookimpl
@@ -19,6 +20,17 @@ class ContainerBuildHook:
         """
         self.root = Path(root)
         self.config = config
+
+    @staticmethod
+    def _configure_logging(verbose: bool) -> None:
+        log_level = logging.DEBUG if verbose else logging.INFO
+        root_logger = logging.getLogger()
+        root_logger.setLevel(log_level)
+        if not root_logger.handlers:
+            logging.basicConfig(
+                level=log_level,
+                format='%(levelname)s: %(message)s' if verbose else '%(message)s',
+            )
 
     def initialize(self, version: str, build_data: Dict[str, Any]) -> None:
         """Initialize the build process."""
@@ -59,18 +71,15 @@ class ContainerBuildHook:
         use_cache = not self.config["no-cache"] if "no-cache" in self.config else True
         clean_output_dir = self.config.get("clean-output-dir", False)
 
+        self._configure_logging(verbose)
+
         # Add build metadata to labels
         labels["org.opencontainers.image.version"] = version
-
-        if verbose:
-            print(f"Building container image: {tag}")
-            print(f"  Base image: {base_image}")
-            print(f"  Context: {self.root}")
 
         # Create build configuration
         config = BuildConfig(
             tag=tag,
-            context_path=str(self.root),
+            context_dir=str(self.root),
             base_image=base_image,
             include_deps=include_deps,
             env=env,
@@ -88,16 +97,9 @@ class ContainerBuildHook:
             builder = ImageBuilder(config)
             builder.build()
 
-            if verbose:
-                print(f"✓ Container image built: {tag}")
-
             # Push if requested
             if push:
-                if verbose:
-                    print("Pushing image to registry...")
                 builder.push()
-                if verbose:
-                    print("✓ Image pushed successfully")
 
         except Exception as e:
             raise RuntimeError(f"Container build failed: {e}")

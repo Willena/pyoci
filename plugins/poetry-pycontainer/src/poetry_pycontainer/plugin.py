@@ -1,5 +1,7 @@
 """Poetry plugin implementation for pycontainer-build."""
 
+import logging
+
 from cleo.commands.command import Command
 from cleo.helpers import option
 from poetry.plugins.application_plugin import ApplicationPlugin
@@ -22,6 +24,17 @@ class ContainerBuildCommand(Command):
         option("dry-run", None, "Show what would be built without building", flag=True),
         option("no-cache", None, "Disable layer caching", flag=True),
     ]
+
+    @staticmethod
+    def _configure_logging(verbose: bool) -> None:
+        log_level = logging.DEBUG if verbose else logging.INFO
+        root_logger = logging.getLogger()
+        root_logger.setLevel(log_level)
+        if not root_logger.handlers:
+            logging.basicConfig(
+                level=log_level,
+                format='%(levelname)s: %(message)s' if verbose else '%(message)s',
+            )
 
     def handle(self) -> int:
         """Handle the build-container command."""
@@ -75,6 +88,8 @@ class ContainerBuildCommand(Command):
         else:
             no_cache = tool_config.get("no_cache", False)
         clean_output_dir = tool_config.get("clean_output_dir", False)
+
+        self._configure_logging(verbose)
         
         # Get environment variables from config
         env = tool_config.get("env", {})
@@ -93,19 +108,10 @@ class ContainerBuildCommand(Command):
         # Get project path
         project_path = poetry.file.path.parent
         
-        self.line(f"<info>Building container image for {package.name} v{package.version}</info>")
-        if verbose:
-            self.line(f"  Tag: {tag}")
-            self.line(f"  Base image: {base_image}")
-            self.line(f"  Context: {project_path}")
-            self.line(f"  Include deps: {include_deps}")
-            if push:
-                self.line(f"  Push: {registry or 'default registry'}")
-        
         # Create build configuration
         config = BuildConfig(
             tag=tag,
-            context_path=str(project_path),
+            context_dir=str(project_path),
             base_image=base_image,
             include_deps=include_deps,
             env=env,
@@ -123,17 +129,11 @@ class ContainerBuildCommand(Command):
         # Build the image
         try:
             builder = ImageBuilder(config)
-            result = builder.build()
-            
-            self.line("<info>✓ Container image built successfully</info>")
-            if verbose:
-                self.line(f"  Output: {result or 'dist/image/'}")
+            builder.build()
             
             # Push if requested
             if push:
-                self.line("<info>Pushing image to registry...</info>")
-                builder.push()
-                self.line("<info>✓ Image pushed successfully</info>")
+                builder.push(registry_url=registry)
             
             return 0
             

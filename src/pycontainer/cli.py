@@ -33,10 +33,11 @@ def main():
     clean_output_group.add_argument("--no-clean-output-dir",dest="clean_output_dir",action="store_false",help="Preserve existing files in the output directory before building")
     args=parser.parse_args()
 
-    if args.verbose:
-        logging.basicConfig(level=logging.DEBUG, format='%(levelname)s: %(message)s')
-    else:
-        logging.basicConfig(level=logging.INFO, format='%(message)s')
+    log_level=logging.DEBUG if args.verbose else logging.INFO
+    root_logger=logging.getLogger()
+    root_logger.setLevel(log_level)
+    if not root_logger.handlers:
+        logging.basicConfig(level=log_level, format='%(levelname)s: %(message)s' if args.verbose else '%(message)s')
 
     if args.config:
         cli_overrides={
@@ -79,7 +80,7 @@ def main():
         cfg.generate_sbom=args.sbom
     builder=ImageBuilder(cfg)
     out=builder.build()
-    print("Built:", out)
+    logging.getLogger(__name__).info("Built: %s", out)
 
     if args.push:
         auth=RegistryAuth.from_user_pass_or_token(username=args.username, password_or_token= args.password)

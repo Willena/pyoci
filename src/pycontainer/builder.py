@@ -1,4 +1,4 @@
-import hashlib, json, tarfile, shutil, tempfile, logging
+import hashlib, json, tarfile, shutil, logging
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 from .config import BuildConfig
@@ -37,6 +37,7 @@ class ImageBuilder:
             return self.config.tag
         
         output_path=Path(self.config.output_dir)
+        logger.info("Building image %s", self.config.tag)
         if self.config.clean_output_dir and output_path.exists():
             logger.info("Cleaning output directory %s", output_path)
             shutil.rmtree(output_path)
@@ -47,6 +48,7 @@ class ImageBuilder:
         refs_dir=ensure_dir(output/'refs'/'tags')
 
         os_name, arch = parse_platform(self.config.platform)
+        logger.info("Using base image %s for %s/%s", self.config.base_image, os_name, arch)
         base_layers, base_config = self._pull_base_image(layers_dir, os_name, arch)
         
         entry = self.config.entrypoint or detect_entrypoint(self.config.context_dir)
@@ -100,6 +102,7 @@ class ImageBuilder:
         self.manifest_digest=manifest_digest
         self.config_digest=cfg_digest
         self.layers=all_layers
+        logger.info("Image layout written to %s", output)
         
         if getattr(self.config, 'generate_sbom', False):
             sbom_path=output/'sbom.json'
@@ -107,6 +110,7 @@ class ImageBuilder:
             generate_sbom(Path(self.config.context_dir), sbom_path)
             logger.info(f"✓ SBOM saved to {sbom_path}")
         
+        logger.info("Built image %s with %d layer(s)", self.config.tag, len(all_layers))
         return self.config.tag
     
     def _pull_base_image(self, layers_dir: Path, os_name: str, arch: str) -> Tuple[List[OCILayer], Optional[Dict]]:
@@ -115,7 +119,7 @@ class ImageBuilder:
         auth=get_auth_for_registry(registry)
         client=RegistryClient(registry, repo, auth=auth)
         
-        print(f"Pulling base image {self.config.base_image} for {os_name}/{arch}...")
+        logger.info("Pulling base image %s for %s/%s...", self.config.base_image, os_name, arch)
         manifest, _=client.pull_manifest(tag)
         
         if manifest.get('mediaType')=='application/vnd.oci.image.index.v1+json':
@@ -138,11 +142,11 @@ class ImageBuilder:
             layer_size=layer_desc['size']
             layer_path=layers_dir/layer_digest.split(':',1)[1]
             if not layer_path.exists():
-                print(f"  Pulling layer {i}/{len(manifest['layers'])} ({layer_digest[:19]}...)")
+                logger.info("  Pulling layer %d/%d (%s...)", i, len(manifest['layers']), layer_digest[:19])
                 client.pull_blob(layer_digest, layer_path)
             base_layers.append(OCILayer(layer_desc['mediaType'], layer_digest, layer_size, str(layer_path)))
         
-        print(f"✓ Base image pulled ({len(base_layers)} layers)")
+        logger.info("Base image pulled (%d layers)", len(base_layers))
         return base_layers, base_config
     
     def push(self, registry_url: Optional[str]=None, auth: Optional[RegistryAuth]=None, show_progress: bool=True):
@@ -158,41 +162,47 @@ class ImageBuilder:
         output=Path(self.config.output_dir)
         layers_dir=output/'blobs'/'sha256'
         
-        if show_progress: print(f"Pushing to {registry}/{repo}:{tag}")
+        if show_progress:
+            logger.info("Pushing to %s/%s:%s", registry, repo, tag)
         
         for i, layer in enumerate(self.layers, 1):
-            if show_progress: print(f"  Pushing layer {i}/{len(self.layers)} ({layer.digest[:19]}...)")
+            if show_progress:
+                logger.info("  Pushing layer %d/%d (%s...)", i, len(self.layers), layer.digest[:19])
             blob_path=layers_dir/layer.digest.split(":",1)[1]
             skipped=not client.push_blob(layer.digest, blob_path, check_exists=True)
-            if show_progress and skipped: print(f"    Layer exists, skipped")
+            if show_progress and skipped:
+                logger.info("    Layer exists, skipped")
         
-        if show_progress: print(f"  Pushing config ({self.config_digest[:19]}...)")
+        if show_progress:
+            logger.info("  Pushing config (%s...)", self.config_digest[:19])
         cfg_path=layers_dir/self.config_digest.split(":",1)[1]
         client.push_blob(self.config_digest, cfg_path, check_exists=True)
         
-        if show_progress: print(f"  Pushing manifest ({self.manifest_digest[:19]}...)")
+        if show_progress:
+            logger.info("  Pushing manifest (%s...)", self.manifest_digest[:19])
         manifest_path=layers_dir/self.manifest_digest.split(":",1)[1]
         manifest_data=manifest_path.read_bytes()
         client.push_manifest(tag, manifest_data)
         
-        if show_progress: print(f"✓ Pushed {registry}/{repo}:{tag}")
+        if show_progress:
+            logger.info("Pushed %s/%s:%s", registry, repo, tag)
         return f"{registry}/{repo}:{tag}"
     
     def _show_build_plan(self):
         """Display build plan for dry-run mode."""
-        print(f"Build Plan for {self.config.tag}:")
-        print(f"  Base Image: {self.config.base_image}")
-        print(f"  Context: {self.config.context_dir}")
-        print(f"  Working Dir: {self.config.workdir}")
-        print(f"  Entrypoint: {' '.join(self.config.entrypoint or ['<auto-detect>'])}")
+        logger.info("Build Plan for %s:", self.config.tag)
+        logger.info("  Base Image: %s", self.config.base_image)
+        logger.info("  Context: %s", self.config.context_dir)
+        logger.info("  Working Dir: %s", self.config.workdir)
+        logger.info("  Entrypoint: %s", ' '.join(self.config.entrypoint or ['<auto-detect>']))
         if self.config.exposed_ports:
-            print(f"  Exposed Ports: {', '.join(map(str, self.config.exposed_ports))}")
+            logger.info("  Exposed Ports: %s", ', '.join(map(str, self.config.exposed_ports)))
         if self.config.env:
-            print(f"  Environment: {', '.join(f'{k}={v}' for k,v in self.config.env.items())}")
+            logger.info("  Environment: %s", ', '.join(f'{k}={v}' for k,v in self.config.env.items()))
         if self.config.labels:
-            print(f"  Labels: {', '.join(f'{k}={v}' for k,v in self.config.labels.items())}")
-        print(f"  Include Dependencies: {self.config.include_deps}")
-        print(f"  Use Cache: {self.config.use_cache}")
+            logger.info("  Labels: %s", ', '.join(f'{k}={v}' for k,v in self.config.labels.items()))
+        logger.info("  Include Dependencies: %s", self.config.include_deps)
+        logger.info("  Use Cache: %s", self.config.use_cache)
 
     def _create_deps_layer(self, layers_dir: Path) -> Optional[OCILayer]:
         """Create dependency layer from venv or requirements.txt."""
@@ -201,7 +211,7 @@ class ImageBuilder:
         if not deps_paths:
             return None
         
-        print(f"Creating dependency layer ({len(deps_paths)} files)...")
+        logger.info("Creating dependency layer (%d files)", len(deps_paths))
         tmp=layers_dir/'deps-layer.tar'
         with tarfile.open(tmp,'w') as tar:
             for abs_path, rel in deps_paths:
@@ -211,7 +221,7 @@ class ImageBuilder:
         digest="sha256:"+hashlib.sha256(data).hexdigest()
         final=layers_dir/digest.split(":",1)[1]
         tmp.rename(final)
-        print(f"✓ Dependency layer created ({digest[:19]}...)")
+        logger.info("Dependency layer created (%s...)", digest[:19])
         return OCILayer("application/vnd.oci.image.layer.v1.tar",digest,len(data),str(final))
 
     def _create_app_layer(self, layers_dir, include_paths):
@@ -225,8 +235,10 @@ class ImageBuilder:
                 final=layers_dir/digest.split(":",1)[1]
                 if not final.exists():
                     shutil.copy2(cache_path, final)
+                logger.info("Reusing cached application layer (%d files)", len(files))
                 return OCILayer("application/vnd.oci.image.layer.v1.tar",digest,cache_path.stat().st_size,str(final))
         
+        logger.info("Creating application layer (%d files)", len(files))
         tmp=layers_dir/'app-layer.tar'
         files_sorted=sorted(files, key=lambda x: x[1].as_posix()) if self.config.reproducible else files
         

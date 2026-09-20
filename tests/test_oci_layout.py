@@ -1,5 +1,6 @@
 """Tests for OCI Image Layout structure validation."""
 import json, tempfile
+import logging
 from pathlib import Path
 from unittest.mock import patch
 from pycontainer.builder import ImageBuilder
@@ -125,6 +126,25 @@ def test_output_dir_can_be_cleaned_before_build():
 
         assert not stale_file.exists(), "Cleanup should delete stale files from the output directory"
         assert (output/"index.json").exists(), "Build output should still be recreated after cleanup"
+
+
+def test_build_emits_phase_logs(caplog):
+    """Verify the build emits minimal high-signal progress logs."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ctx=_create_test_context(tmpdir)
+        output=Path(tmpdir)/"test-image"
+        cfg=BuildConfig(tag="test:v1",output_dir=str(output),context_dir=str(ctx),use_cache=False)
+
+        with caplog.at_level(logging.INFO), patch("pycontainer.builder.ImageBuilder._pull_base_image", return_value=_mock_base_image()):
+            builder=ImageBuilder(cfg)
+            builder.build()
+
+        messages=[record.getMessage() for record in caplog.records]
+        assert "Building image test:v1" in messages
+        assert "Using base image python:3.11-slim for linux/amd64" in messages
+        assert any(msg.startswith("Creating application layer (") for msg in messages)
+        assert f"Image layout written to {output}" in messages
+        assert "Built image test:v1 with 1 layer(s)" in messages
 
 if __name__=="__main__":
     test_oci_layout_structure()
